@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="620" viewBox="0 0 980 620" role="img" aria-labelledby="title desc">
+  <title id="title">가상 노드 사용 시 데이터 저장</title>
+  <desc id="desc">데이터가 먼저 가상 노드에 배정되고 가상 노드가 실제 물리 서버로 연결되어 저장되는 모습</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2563eb"/></marker>
+    <style>
+      .ring{fill:#f8fafc;stroke:#334155;stroke-width:5}
+      .key{fill:#fee2e2;stroke:#dc2626;stroke-width:3}
+      .vnode{fill:#dbeafe;stroke:#2563eb;stroke-width:3}
+      .server{fill:#f1f5f9;stroke:#64748b;stroke-width:3}
+      .label{font-family:Arial,Apple SD Gothic Neo,sans-serif;font-size:22px;fill:#0f172a}
+      .small{font-family:Arial,Apple SD Gothic Neo,sans-serif;font-size:15px;fill:#334155}
+      .path{stroke:#2563eb;stroke-width:3;fill:none;marker-end:url(#arrow)}
+      .map{stroke:#64748b;stroke-width:2;fill:none;marker-end:url(#arrow);stroke-dasharray:5 4}
+    </style>
+  </defs>
+  <rect width="980" height="620" fill="#fff"/>
+  <text x="40" y="48" class="label">가상 노드 저장: key → 가장 가까운 가상 노드 → 물리 서버</text>
+  <circle cx="380" cy="315" r="185" class="ring"/>
+  <circle cx="495" cy="170" r="26" class="vnode"/><text x="475" y="176" class="small">S2-1</text>
+  <circle cx="540" cy="360" r="26" class="vnode"/><text x="520" y="366" class="small">S1-2</text>
+  <circle cx="325" cy="487" r="26" class="vnode"/><text x="305" y="493" class="small">S3-1</text>
+  <circle cx="220" cy="250" r="26" class="vnode"/><text x="200" y="256" class="small">S2-2</text>
+  <circle cx="430" cy="150" r="20" class="key"/><text x="424" y="156" class="small">A</text>
+  <circle cx="510" cy="300" r="20" class="key"/><text x="504" y="306" class="small">B</text>
+  <circle cx="270" cy="435" r="20" class="key"/><text x="264" y="441" class="small">C</text>
+  <circle cx="190" cy="185" r="20" class="key"/><text x="184" y="191" class="small">D</text>
+  <path d="M450 154 C468 157 482 162 491 166" class="path"/>
+  <path d="M525 315 C535 332 540 346 540 354" class="path"/>
+  <path d="M286 448 C302 463 314 475 321 483" class="path"/>
+  <path d="M198 202 C210 222 217 237 220 246" class="path"/>
+  <rect x="690" y="150" width="190" height="70" rx="12" class="server"/><text x="730" y="192" class="small">S1: data B</text>
+  <rect x="690" y="275" width="190" height="70" rx="12" class="server"/><text x="730" y="317" class="small">S2: data A, D</text>
+  <rect x="690" y="400" width="190" height="70" rx="12" class="server"/><text x="730" y="442" class="small">S3: data C</text>
+  <path d="M566 360 C620 330 650 240 690 185" class="map"/>
+  <path d="M521 170 C620 180 650 260 690 310" class="map"/>
+  <path d="M246 250 C520 260 620 295 690 310" class="map"/>
+  <path d="M351 487 C560 500 640 455 690 435" class="map"/>
+</svg>

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="650" viewBox="0 0 1080 650" role="img" aria-labelledby="title desc">
+  <title id="title">가상 노드 사용 시 서버 추가 삭제</title>
+  <desc id="desc">가상 노드를 사용할 때 서버 추가 삭제로 여러 작은 구간이 분산 이동하는 모습</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#dc2626"/></marker>
+    <style>
+      .ring{fill:#f8fafc;stroke:#334155;stroke-width:4}
+      .vnode{fill:#dbeafe;stroke:#2563eb;stroke-width:3}
+      .new{fill:#dcfce7;stroke:#16a34a;stroke-width:3}
+      .gone{fill:#fee2e2;stroke:#dc2626;stroke-width:3;stroke-dasharray:6 4}
+      .seg{fill:none;stroke:#f97316;stroke-width:10;stroke-linecap:round}
+      .label{font-family:Arial,Apple SD Gothic Neo,sans-serif;font-size:21px;fill:#0f172a}
+      .small{font-family:Arial,Apple SD Gothic Neo,sans-serif;font-size:14px;fill:#334155}
+      .move{stroke:#dc2626;stroke-width:3;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1080" height="650" fill="#fff"/>
+  <text x="40" y="46" class="label">가상 노드 추가/삭제: 큰 덩어리가 아니라 작은 조각들이 분산 이동</text>
+  <g transform="translate(60,95)">
+    <text x="0" y="0" class="label">1) S4 추가</text>
+    <circle cx="230" cy="260" r="160" class="ring"/>
+    <path d="M335 140 A160 160 0 0 1 384 235" class="seg"/>
+    <path d="M210 418 A160 160 0 0 1 115 370" class="seg"/>
+    <path d="M91 220 A160 160 0 0 1 150 150" class="seg"/>
+    <circle cx="230" cy="100" r="24" class="vnode"/><text x="213" y="106" class="small">S1-1</text>
+    <circle cx="383" cy="213" r="24" class="vnode"/><text x="366" y="219" class="small">S2-1</text>
+    <circle cx="325" cy="389" r="24" class="vnode"/><text x="308" y="395" class="small">S3-1</text>
+    <circle cx="135" cy="389" r="24" class="vnode"/><text x="118" y="395" class="small">S1-2</text>
+    <circle cx="77" cy="213" r="24" class="vnode"/><text x="60" y="219" class="small">S2-2</text>
+    <circle cx="337" cy="142" r="24" class="new"/><text x="320" y="148" class="small">S4-1</text>
+    <circle cx="210" cy="420" r="24" class="new"/><text x="193" y="426" class="small">S4-2</text>
+    <circle cx="104" cy="183" r="24" class="new"/><text x="87" y="189" class="small">S4-3</text>
+    <path d="M310 130 C325 132 333 137 337 142" class="move"/>
+    <path d="M170 406 C185 415 199 419 210 420" class="move"/>
+    <path d="M82 210 C90 198 98 188 104 183" class="move"/>
+    <text x="20" y="485" class="small">여러 기존 서버에서 작은 구간이 S4로 나뉘어 이동</text>
+  </g>
+  <g transform="translate(570,95)">
+    <text x="0" y="0" class="label">2) S2 삭제</text>
+    <circle cx="230" cy="260" r="160" class="ring"/>
+    <path d="M365 180 A160 160 0 0 1 385 240" class="seg"/>
+    <path d="M78 210 A160 160 0 0 1 126 150" class="seg"/>
+    <circle cx="230" cy="100" r="24" class="vnode"/><text x="213" y="106" class="small">S1-1</text>
+    <circle cx="383" cy="213" r="24" class="gone"/><text x="366" y="219" class="small">S2-1</text>
+    <circle cx="325" cy="389" r="24" class="vnode"/><text x="308" y="395" class="small">S3-1</text>
+    <circle cx="135" cy="389" r="24" class="vnode"/><text x="118" y="395" class="small">S1-2</text>
+    <circle cx="77" cy="213" r="24" class="gone"/><text x="60" y="219" class="small">S2-2</text>
+    <circle cx="337" cy="142" r="24" class="vnode"/><text x="320" y="148" class="small">S3-2</text>
+    <circle cx="210" cy="420" r="24" class="vnode"/><text x="193" y="426" class="small">S1-3</text>
+    <path d="M379 190 C365 170 350 152 340 145" class="move"/>
+    <path d="M91 195 C103 175 118 157 130 148" class="move"/>
+    <text x="20" y="485" class="small">S2의 여러 조각이 각각 다음 가상 노드로 분산 이동</text>
+  </g>
+</svg>

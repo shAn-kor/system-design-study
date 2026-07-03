@@ -1,0 +1,1 @@
+Replace abstract Mermaid diagrams in seonghun/chapter05-consistent-hash/Untitled.md with actual consistent-hash structure images: hash ring, five-server placement, add/delete movement, imbalance without virtual nodes, virtual-node mapping, virtual-node storage, and virtual-node add/delete behavior. Verify links and rendered image assets.

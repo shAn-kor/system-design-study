@@ -1,0 +1,22 @@
+# svg render check
+XML_OK seonghun/chapter05-consistent-hash/images/01-hash-ring-basic.svg
+XML_OK seonghun/chapter05-consistent-hash/images/02-five-server-placement.svg
+XML_OK seonghun/chapter05-consistent-hash/images/03-server-add-delete.svg
+XML_OK seonghun/chapter05-consistent-hash/images/04-imbalance-without-vnodes.svg
+XML_OK seonghun/chapter05-consistent-hash/images/05-virtual-node-mapping.svg
+XML_OK seonghun/chapter05-consistent-hash/images/06-virtual-node-storage.svg
+XML_OK seonghun/chapter05-consistent-hash/images/07-vnode-add-delete.svg
+.omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/01-hash-ring-basic.png
+   59601 .omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/01-hash-ring-basic.png
+.omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/05-virtual-node-mapping.png
+   81067 .omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/05-virtual-node-mapping.png
+.omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/06-virtual-node-storage.png
+   65491 .omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/06-virtual-node-storage.png
+.omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/02-five-server-placement.png
+   66319 .omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/02-five-server-placement.png
+.omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/07-vnode-add-delete.png
+   65939 .omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/07-vnode-add-delete.png
+.omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/03-server-add-delete.png
+   55812 .omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/03-server-add-delete.png
+.omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/04-imbalance-without-vnodes.png
+   58509 .omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png/04-imbalance-without-vnodes.png

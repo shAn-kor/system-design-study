@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="620" viewBox="0 0 960 620" role="img" aria-labelledby="title desc">
+  <title id="title">서버 5대 안정 해시 데이터 배치</title>
+  <desc id="desc">서버 5대가 해시 링 위에 있을 때 데이터가 시계 방향 첫 서버에 저장되는 모습</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2563eb"/></marker>
+    <style>
+      .ring{fill:#f8fafc;stroke:#334155;stroke-width:5}
+      .server{fill:#dbeafe;stroke:#1d4ed8;stroke-width:3}
+      .key{fill:#fef3c7;stroke:#d97706;stroke-width:3}
+      .label{font-family:Arial,Apple SD Gothic Neo,sans-serif;font-size:22px;fill:#0f172a}
+      .small{font-family:Arial,Apple SD Gothic Neo,sans-serif;font-size:16px;fill:#334155}
+      .arrow{stroke:#2563eb;stroke-width:3;fill:none;marker-end:url(#arrow)}
+      .store{fill:#f1f5f9;stroke:#cbd5e1}
+    </style>
+  </defs>
+  <rect width="960" height="620" fill="#fff"/>
+  <text x="40" y="48" class="label">기본 서버 5대: key는 시계 방향으로 처음 만나는 서버에 저장</text>
+  <circle cx="420" cy="305" r="190" class="ring"/>
+  <circle cx="420" cy="115" r="34" class="server"/><text x="403" y="123" class="label">S1</text>
+  <circle cx="601" cy="246" r="34" class="server"/><text x="584" y="254" class="label">S2</text>
+  <circle cx="532" cy="459" r="34" class="server"/><text x="515" y="467" class="label">S3</text>
+  <circle cx="308" cy="459" r="34" class="server"/><text x="291" y="467" class="label">S4</text>
+  <circle cx="239" cy="246" r="34" class="server"/><text x="222" y="254" class="label">S5</text>
+  <circle cx="523" cy="178" r="22" class="key"/><text x="512" y="184" class="small">A</text>
+  <circle cx="580" cy="360" r="22" class="key"/><text x="569" y="366" class="small">B</text>
+  <circle cx="418" cy="492" r="22" class="key"/><text x="407" y="498" class="small">C</text>
+  <circle cx="246" cy="360" r="22" class="key"/><text x="235" y="366" class="small">D</text>
+  <circle cx="318" cy="155" r="22" class="key"/><text x="307" y="161" class="small">E</text>
+  <path d="M542 188 C565 199 584 216 594 232" class="arrow"/>
+  <path d="M574 380 C564 410 548 435 540 447" class="arrow"/>
+  <path d="M396 490 C363 486 335 475 323 468" class="arrow"/>
+  <path d="M239 338 C238 304 238 273 239 260" class="arrow"/>
+  <path d="M335 147 C363 132 393 120 405 117" class="arrow"/>
+  <rect x="680" y="130" width="230" height="330" rx="14" class="store"/>
+  <text x="704" y="166" class="label">저장 결과</text>
+  <text x="704" y="210" class="small">S1: data E</text>
+  <text x="704" y="250" class="small">S2: data A</text>
+  <text x="704" y="290" class="small">S3: data B</text>
+  <text x="704" y="330" class="small">S4: data C</text>
+  <text x="704" y="370" class="small">S5: data D</text>
+  <text x="704" y="420" class="small">각 key는 링에서 다음 server로 이동</text>
+</svg>

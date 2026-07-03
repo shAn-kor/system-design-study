@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "createdAt": "2026-07-03T16:46:53.917Z",
+  "updatedAt": "2026-07-03T16:59:09.833Z",
+  "briefPath": ".omo/ulw-loop/ch05-consistent-hash-structure-images/brief.md",
+  "goalsPath": ".omo/ulw-loop/ch05-consistent-hash-structure-images/goals.json",
+  "ledgerPath": ".omo/ulw-loop/ch05-consistent-hash-structure-images/ledger.jsonl",
+  "codexGoalMode": "aggregate",
+  "goals": [
+    {
+      "id": "G001-replace-abstract-mermaid-diagrams-in",
+      "title": "Replace abstract Mermaid diagrams in seonghun/chapter05-consistent-ha...",
+      "objective": "Replace abstract Mermaid diagrams in seonghun/chapter05-consistent-hash/Untitled.md with actual consistent-hash structure images: hash ring, five-server placement, add/delete movement, imbalance without virtual nodes, virtual-node mapping, virtual-node storage, and virtual-node add/delete behavior. Verify links and rendered image assets.",
+      "status": "complete",
+      "successCriteria": [
+        {
+          "id": "C001",
+          "scenario": "Auxiliary surface: rg checks confirm Untitled.md contains seven SVG image links under images/ and contains no Mermaid code fences.",
+          "userModel": "happy",
+          "expectedEvidence": ".omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/markdown-image-links.txt",
+          "essential": true,
+          "capturedEvidence": "artifact .omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/markdown-image-links.txt shows seven SVG image links and NO_MERMAID_FENCES; linked files verified with test -f | cleanup: no server/tmux/browser/container/bound port created",
+          "status": "pass",
+          "capturedAt": "2026-07-03T16:48:28.550Z"
+        },
+        {
+          "id": "C002",
+          "scenario": "Auxiliary surface: XML parse and rsvg-convert render all seven SVG files under seonghun/chapter05-consistent-hash/images into non-empty PNG files.",
+          "userModel": "edge",
+          "expectedEvidence": ".omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/svg-render-check.txt",
+          "essential": true,
+          "capturedEvidence": "artifact .omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/svg-render-check.txt shows XML_OK for seven SVGs and non-empty rsvg-convert PNG outputs; visual spot checks: 01-hash-ring-basic.png and 07-vnode-add-delete.png | cleanup: no server/tmux/browser/container/bound port created",
+          "status": "pass",
+          "capturedAt": "2026-07-03T16:48:28.607Z"
+        },
+        {
+          "id": "C003",
+          "scenario": "Auxiliary surface: rg -n headings confirms the document order follows the user's draft: general hash problem, stable hash/ring, add/delete, stable hash problem, virtual nodes, reference design notes.",
+          "userModel": "regression",
+          "expectedEvidence": ".omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/order-check.txt",
+          "essential": false,
+          "capturedEvidence": "artifact .omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/order-check.txt shows headings in draft order: general hash problem, stable hash/ring, add/delete, stable hash problem, virtual node, reference design notes | cleanup: no server/tmux/browser/container/bound port created",
+          "status": "pass",
+          "capturedAt": "2026-07-03T16:48:28.663Z"
+        }
+      ],
+      "attempt": 1,
+      "createdAt": "2026-07-03T16:46:53.917Z",
+      "updatedAt": "2026-07-03T16:59:09.833Z",
+      "startedAt": "2026-07-03T16:47:14.338Z",
+      "completedAt": "2026-07-03T16:59:09.833Z",
+      "evidence": "C001 PASS: Untitled.md has seven SVG image links and no Mermaid fences; C002 PASS: seven SVGs XML-parse and render to non-empty PNGs with visual spot checks; C003 PASS: section order follows user's draft; code/content review APPROVE; manual QA PASS; gate review APPROVE; cleanup: no server/tmux/browser/container/bound port created, all reviewers closed."
+    }
+  ],
+  "codexObjective": "Complete the durable ulw-loop plan in .omo/ulw-loop/ch05-consistent-hash-structure-images/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/ch05-consistent-hash-structure-images/ledger.jsonl as the audit trail.",
+  "aggregateCompletion": {
+    "status": "complete",
+    "completedAt": "2026-07-03T16:59:09.833Z",
+    "evidence": "C001 PASS: Untitled.md has seven SVG image links and no Mermaid fences; C002 PASS: seven SVGs XML-parse and render to non-empty PNGs with visual spot checks; C003 PASS: section order follows user's draft; code/content review APPROVE; manual QA PASS; gate review APPROVE; cleanup: no server/tmux/browser/container/bound port created, all reviewers closed.",
+    "codexGoal": {
+      "threadId": "019f278d-17f1-7143-99a6-bc0d5085eb4c",
+      "objective": "Complete the durable ulw-loop plan in .omo/ulw-loop/ch05-consistent-hash-structure-images/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/ch05-consistent-hash-structure-images/ledger.jsonl as the audit trail.",
+      "status": "complete",
+      "tokensUsed": 126829,
+      "timeUsedSeconds": 715
+    }
+  }
+}

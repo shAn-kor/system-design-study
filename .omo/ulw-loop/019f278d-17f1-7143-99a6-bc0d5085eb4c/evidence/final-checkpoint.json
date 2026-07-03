@@ -1,0 +1,297 @@
+{
+  "ok": true,
+  "plan": {
+    "version": 1,
+    "createdAt": "2026-07-03T15:12:29.599Z",
+    "updatedAt": "2026-07-03T15:27:15.396Z",
+    "briefPath": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/brief.md",
+    "goalsPath": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/goals.json",
+    "ledgerPath": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/ledger.jsonl",
+    "codexGoalMode": "aggregate",
+    "goals": [
+      {
+        "id": "G001-5-seongh",
+        "title": "이미지에 나온 참고자료들을 확인해 챕터5 안정 해시 설계 초안에 보충할 수 있는 요약을 작성한다. 산출물은 기존 seongh...",
+        "objective": "이미지에 나온 참고자료들을 확인해 챕터5 안정 해시 설계 초안에 보충할 수 있는 요약을 작성한다. 산출물은 기존 seonghun/chapter05-consistent-hash/Untitled.md에 근거 있는 안정 해시 설계 설명을 추가하는 것이다.",
+        "status": "complete",
+        "successCriteria": [
+          {
+            "id": "C001",
+            "scenario": "Auxiliary surface: rg -n '설계 관점 정리|참고자료별 설계 포인트|가상 노드|Dynamo|Cassandra|Maglev|Discord' seonghun/chapter05-consistent-hash/Untitled.md must show a Korean summary section covering core ring, virtual nodes, Dynamo/Cassandra, Maglev/Discord, and references.",
+            "userModel": "happy",
+            "expectedEvidence": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C001-rg-summary.txt",
+            "essential": true,
+            "capturedEvidence": "artifact .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C001-rg-summary.txt contains rg hits for summary structure, Dynamo, Cassandra, Maglev, Discord, virtual nodes, and references; sources checked: Wikipedia, Tom White, Dynamo PDF, Cassandra PDF, Discord blog, Stanford CS168 PDF, Maglev PDF | cleanup: no runtime process, no tmux/browser/container; removed obsolete zero-byte C003-diff.txt",
+            "status": "pass",
+            "capturedAt": "2026-07-03T15:15:41.348Z"
+          },
+          {
+            "id": "C002",
+            "scenario": "Auxiliary surface: rg -n '한계|트레이드오프|불균등|가상 노드|hot path|lookup|성능' seonghun/chapter05-consistent-hash/Untitled.md confirms the summary mentions limitations/tradeoffs: non-uniform distribution, virtual nodes or load movement, and hot-path lookup/performance cost.",
+            "userModel": "edge",
+            "expectedEvidence": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C002-tradeoffs.txt",
+            "essential": true,
+            "capturedEvidence": "artifact .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C002-tradeoffs.txt contains rg hits for 한계, 불균등, 가상 노드, hot path, lookup, 성능 tradeoffs | cleanup: no runtime process, no tmux/browser/container",
+            "status": "pass",
+            "capturedAt": "2026-07-03T15:15:41.403Z"
+          },
+          {
+            "id": "C003",
+            "scenario": "Auxiliary surface: sed -n '1,24p' seonghun/chapter05-consistent-hash/Untitled.md confirms the original rough draft content remains at the top and the new reference-based section begins after it.",
+            "userModel": "regression",
+            "expectedEvidence": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C003-preservation.txt",
+            "essential": false,
+            "capturedEvidence": "artifact .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C003-preservation.txt contains the first 24 lines showing the original rough draft content remains before the new section | cleanup: no runtime process, no tmux/browser/container",
+            "status": "pass",
+            "capturedAt": "2026-07-03T15:15:41.458Z"
+          }
+        ],
+        "attempt": 1,
+        "createdAt": "2026-07-03T15:12:29.599Z",
+        "updatedAt": "2026-07-03T15:27:15.396Z",
+        "startedAt": "2026-07-03T15:12:35.117Z",
+        "completedAt": "2026-07-03T15:27:15.396Z",
+        "evidence": "C001 summary coverage PASS: evidence/C001-rg-summary.txt; C002 tradeoff coverage PASS: evidence/C002-tradeoffs.txt; C003 original draft preservation PASS: evidence/C003-preservation.txt; final code/content review APPROVE, manual QA PASS, gate review APPROVE; quality gate JSON evidence/quality-gate.json; cleanup: no runtime processes, tmux sessions, browsers, containers, or bound ports created; all reviewers closed."
+      }
+    ],
+    "codexObjective": "Complete the durable ulw-loop plan in .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/ledger.jsonl as the audit trail.",
+    "aggregateCompletion": {
+      "status": "complete",
+      "completedAt": "2026-07-03T15:27:15.396Z",
+      "evidence": "C001 summary coverage PASS: evidence/C001-rg-summary.txt; C002 tradeoff coverage PASS: evidence/C002-tradeoffs.txt; C003 original draft preservation PASS: evidence/C003-preservation.txt; final code/content review APPROVE, manual QA PASS, gate review APPROVE; quality gate JSON evidence/quality-gate.json; cleanup: no runtime processes, tmux sessions, browsers, containers, or bound ports created; all reviewers closed.",
+      "codexGoal": {
+        "threadId": "019f278d-17f1-7143-99a6-bc0d5085eb4c",
+        "objective": "Complete the durable ulw-loop plan in .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/ledger.jsonl as the audit trail.",
+        "status": "complete",
+        "tokensUsed": 240872,
+        "timeUsedSeconds": 821
+      }
+    }
+  },
+  "goal": {
+    "id": "G001-5-seongh",
+    "title": "이미지에 나온 참고자료들을 확인해 챕터5 안정 해시 설계 초안에 보충할 수 있는 요약을 작성한다. 산출물은 기존 seongh...",
+    "objective": "이미지에 나온 참고자료들을 확인해 챕터5 안정 해시 설계 초안에 보충할 수 있는 요약을 작성한다. 산출물은 기존 seonghun/chapter05-consistent-hash/Untitled.md에 근거 있는 안정 해시 설계 설명을 추가하는 것이다.",
+    "status": "complete",
+    "successCriteria": [
+      {
+        "id": "C001",
+        "scenario": "Auxiliary surface: rg -n '설계 관점 정리|참고자료별 설계 포인트|가상 노드|Dynamo|Cassandra|Maglev|Discord' seonghun/chapter05-consistent-hash/Untitled.md must show a Korean summary section covering core ring, virtual nodes, Dynamo/Cassandra, Maglev/Discord, and references.",
+        "userModel": "happy",
+        "expectedEvidence": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C001-rg-summary.txt",
+        "essential": true,
+        "capturedEvidence": "artifact .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C001-rg-summary.txt contains rg hits for summary structure, Dynamo, Cassandra, Maglev, Discord, virtual nodes, and references; sources checked: Wikipedia, Tom White, Dynamo PDF, Cassandra PDF, Discord blog, Stanford CS168 PDF, Maglev PDF | cleanup: no runtime process, no tmux/browser/container; removed obsolete zero-byte C003-diff.txt",
+        "status": "pass",
+        "capturedAt": "2026-07-03T15:15:41.348Z"
+      },
+      {
+        "id": "C002",
+        "scenario": "Auxiliary surface: rg -n '한계|트레이드오프|불균등|가상 노드|hot path|lookup|성능' seonghun/chapter05-consistent-hash/Untitled.md confirms the summary mentions limitations/tradeoffs: non-uniform distribution, virtual nodes or load movement, and hot-path lookup/performance cost.",
+        "userModel": "edge",
+        "expectedEvidence": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C002-tradeoffs.txt",
+        "essential": true,
+        "capturedEvidence": "artifact .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C002-tradeoffs.txt contains rg hits for 한계, 불균등, 가상 노드, hot path, lookup, 성능 tradeoffs | cleanup: no runtime process, no tmux/browser/container",
+        "status": "pass",
+        "capturedAt": "2026-07-03T15:15:41.403Z"
+      },
+      {
+        "id": "C003",
+        "scenario": "Auxiliary surface: sed -n '1,24p' seonghun/chapter05-consistent-hash/Untitled.md confirms the original rough draft content remains at the top and the new reference-based section begins after it.",
+        "userModel": "regression",
+        "expectedEvidence": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C003-preservation.txt",
+        "essential": false,
+        "capturedEvidence": "artifact .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C003-preservation.txt contains the first 24 lines showing the original rough draft content remains before the new section | cleanup: no runtime process, no tmux/browser/container",
+        "status": "pass",
+        "capturedAt": "2026-07-03T15:15:41.458Z"
+      }
+    ],
+    "attempt": 1,
+    "createdAt": "2026-07-03T15:12:29.599Z",
+    "updatedAt": "2026-07-03T15:27:15.396Z",
+    "startedAt": "2026-07-03T15:12:35.117Z",
+    "completedAt": "2026-07-03T15:27:15.396Z",
+    "evidence": "C001 summary coverage PASS: evidence/C001-rg-summary.txt; C002 tradeoff coverage PASS: evidence/C002-tradeoffs.txt; C003 original draft preservation PASS: evidence/C003-preservation.txt; final code/content review APPROVE, manual QA PASS, gate review APPROVE; quality gate JSON evidence/quality-gate.json; cleanup: no runtime processes, tmux sessions, browsers, containers, or bound ports created; all reviewers closed."
+  },
+  "ledgerEntry": {
+    "at": "2026-07-03T15:27:15.396Z",
+    "kind": "aggregate_completed",
+    "goalId": "G001-5-seongh",
+    "status": "complete",
+    "evidence": "C001 summary coverage PASS: evidence/C001-rg-summary.txt; C002 tradeoff coverage PASS: evidence/C002-tradeoffs.txt; C003 original draft preservation PASS: evidence/C003-preservation.txt; final code/content review APPROVE, manual QA PASS, gate review APPROVE; quality gate JSON evidence/quality-gate.json; cleanup: no runtime processes, tmux sessions, browsers, containers, or bound ports created; all reviewers closed.",
+    "codexGoal": {
+      "threadId": "019f278d-17f1-7143-99a6-bc0d5085eb4c",
+      "objective": "Complete the durable ulw-loop plan in .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/ledger.jsonl as the audit trail.",
+      "status": "complete",
+      "tokensUsed": 240872,
+      "timeUsedSeconds": 821
+    },
+    "qualityGate": {
+      "codeReview": {
+        "by": "lazycodex-code-reviewer",
+        "recommendation": "APPROVE",
+        "codeQualityStatus": "CLEAR",
+        "reportPath": ".omo/evidence/G001-5-seongh-code-review.md",
+        "evidence": "Markdown artifact and ULW evidence reviewed; original draft preserved, Korean supplement accurate and scoped; reference links verified by reviewer.",
+        "blockers": []
+      },
+      "manualQa": {
+        "by": "lazycodex-qa-executor",
+        "status": "passed",
+        "evidence": "CLI/filesystem evidence proves summary coverage, tradeoff coverage, and original draft preservation.",
+        "surfaceEvidence": [
+          {
+            "id": "C001-summary-coverage",
+            "criterionRef": "C001",
+            "surface": "cli",
+            "invocation": "rg -n '설계 관점 정리|참고자료별 설계 포인트|가상 노드|Dynamo|Cassandra|Maglev|Discord' seonghun/chapter05-consistent-hash/Untitled.md",
+            "verdict": "passed",
+            "artifactRefs": [
+              "C001-rg-summary"
+            ]
+          },
+          {
+            "id": "C002-tradeoffs",
+            "criterionRef": "C002",
+            "surface": "cli",
+            "invocation": "rg -n '한계|트레이드오프|불균등|가상 노드|hot path|lookup|성능' seonghun/chapter05-consistent-hash/Untitled.md",
+            "verdict": "passed",
+            "artifactRefs": [
+              "C002-tradeoffs"
+            ]
+          },
+          {
+            "id": "C003-preservation",
+            "criterionRef": "C003",
+            "surface": "cli",
+            "invocation": "sed -n '1,24p' seonghun/chapter05-consistent-hash/Untitled.md",
+            "verdict": "passed",
+            "artifactRefs": [
+              "C003-preservation"
+            ]
+          }
+        ],
+        "adversarialCases": [
+          {
+            "id": "empty-or-missing-evidence",
+            "criterionRef": "C001-C003",
+            "scenario": "All named evidence artifacts and target Markdown must be non-empty.",
+            "expectedBehavior": "Non-empty artifact files exist.",
+            "verdict": "passed",
+            "artifactRefs": [
+              "manual-qa-matrix",
+              "status-after-evidence"
+            ]
+          },
+          {
+            "id": "scope-drift-dirty-worktree",
+            "criterionRef": "scope",
+            "scenario": "Dirty worktree contains unrelated paths; task-owned paths must be explicit.",
+            "expectedBehavior": "Scope artifact distinguishes task-owned paths from unrelated dirty paths.",
+            "verdict": "passed",
+            "artifactRefs": [
+              "git-status-scope"
+            ]
+          }
+        ],
+        "artifactRefs": [
+          {
+            "id": "C001-rg-summary",
+            "kind": "log",
+            "description": "Summary coverage evidence.",
+            "path": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C001-rg-summary.txt"
+          },
+          {
+            "id": "C002-tradeoffs",
+            "kind": "log",
+            "description": "Tradeoff coverage evidence.",
+            "path": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C002-tradeoffs.txt"
+          },
+          {
+            "id": "C003-preservation",
+            "kind": "log",
+            "description": "Original draft preservation evidence.",
+            "path": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/C003-preservation.txt"
+          },
+          {
+            "id": "manual-qa-matrix",
+            "kind": "log",
+            "description": "Manual QA matrix.",
+            "path": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/manual-qa-matrix.md"
+          },
+          {
+            "id": "status-after-evidence",
+            "kind": "log",
+            "description": "ULW status after criteria evidence.",
+            "path": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/status-after-evidence.json"
+          },
+          {
+            "id": "git-status-scope",
+            "kind": "log",
+            "description": "Dirty worktree scope explanation.",
+            "path": ".omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/evidence/git-status-scope.txt"
+          }
+        ]
+      },
+      "gateReview": {
+        "by": "lazycodex-gate-reviewer",
+        "recommendation": "APPROVE",
+        "reportPath": ".omo/evidence/G001-5-seongh-gate-review.md",
+        "evidence": "Gate reviewer approved updated evidence artifacts, manual QA matrix, notepad, dirty-scope explanation, cleanup receipts, and reviewer coverage.",
+        "blockers": []
+      },
+      "iteration": {
+        "fullRerun": true,
+        "status": "passed",
+        "rerunCommands": [
+          "rg -n summary/tradeoff patterns against seonghun/chapter05-consistent-hash/Untitled.md",
+          "sed -n '1,24p' seonghun/chapter05-consistent-hash/Untitled.md",
+          "omo ulw-loop status --session-id 019f278d-17f1-7143-99a6-bc0d5085eb4c --json"
+        ],
+        "evidence": "All three criteria recorded pass; final code/content, QA, and gate reviews approved."
+      },
+      "criteriaCoverage": {
+        "totalCriteria": 3,
+        "passCount": 3,
+        "originalIntent": "User wanted the chapter 5 consistent hashing draft supplemented based on photographed references.",
+        "desiredOutcome": "Existing Markdown draft contains a Korean, reference-based design summary for consistent hashing.",
+        "userOutcomeReview": "The target draft was supplemented in place, preserving original notes and adding design goals, tradeoffs, storage/load-balancer/runtime examples, design questions, and source links.",
+        "adversarialClassesCovered": [
+          "empty_evidence",
+          "source_scope",
+          "dirty_worktree_scope",
+          "content_preservation"
+        ]
+      }
+    }
+  },
+  "aggregateCompletion": {
+    "status": "complete",
+    "completedAt": "2026-07-03T15:27:15.396Z",
+    "evidence": "C001 summary coverage PASS: evidence/C001-rg-summary.txt; C002 tradeoff coverage PASS: evidence/C002-tradeoffs.txt; C003 original draft preservation PASS: evidence/C003-preservation.txt; final code/content review APPROVE, manual QA PASS, gate review APPROVE; quality gate JSON evidence/quality-gate.json; cleanup: no runtime processes, tmux sessions, browsers, containers, or bound ports created; all reviewers closed.",
+    "codexGoal": {
+      "threadId": "019f278d-17f1-7143-99a6-bc0d5085eb4c",
+      "objective": "Complete the durable ulw-loop plan in .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/goals.json, including later accepted/appended stories, under the original brief constraints; use .omo/ulw-loop/019f278d-17f1-7143-99a6-bc0d5085eb4c/ledger.jsonl as the audit trail.",
+      "status": "complete",
+      "tokensUsed": 240872,
+      "timeUsedSeconds": 821
+    }
+  },
+  "summary": {
+    "total": 1,
+    "pending": 0,
+    "in_progress": 0,
+    "complete": 1,
+    "failed": 0,
+    "blocked": 0,
+    "review_blocked": 0,
+    "needs_user_decision": 0,
+    "superseded": 0,
+    "criteria": {
+      "total": 3,
+      "pass": 3,
+      "pending": 0,
+      "fail": 0,
+      "blocked": 0
+    }
+  }
+}

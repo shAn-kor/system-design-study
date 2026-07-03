@@ -1,0 +1,160 @@
+{
+  "codeReview": {
+    "by": "lazycodex-code-reviewer",
+    "recommendation": "APPROVE",
+    "codeQualityStatus": "CLEAR",
+    "reportPath": ".omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/code-review-summary.md",
+    "evidence": "Code/content reviewer approved: no Mermaid fences, seven SVG image links, valid SVGs and rendered PNGs depict consistent-hash structures.",
+    "blockers": []
+  },
+  "manualQa": {
+    "by": "lazycodex-qa-executor",
+    "status": "passed",
+    "evidence": "Manual QA confirmed linked SVGs exist, Mermaid fences are absent, SVGs render to non-empty PNGs, and visuals show hash-ring/virtual-node structures.",
+    "surfaceEvidence": [
+      {
+        "id": "markdown-links",
+        "criterionRef": "C001",
+        "surface": "cli",
+        "invocation": "rg image links and no mermaid fences in Untitled.md",
+        "verdict": "passed",
+        "artifactRefs": [
+          "markdown-image-links"
+        ]
+      },
+      {
+        "id": "svg-render",
+        "criterionRef": "C002",
+        "surface": "cli",
+        "invocation": "XML parse SVGs and rsvg-convert each SVG to PNG",
+        "verdict": "passed",
+        "artifactRefs": [
+          "svg-render-check",
+          "rendered-png"
+        ]
+      },
+      {
+        "id": "order-check",
+        "criterionRef": "C003",
+        "surface": "cli",
+        "invocation": "rg -n '^## ' seonghun/chapter05-consistent-hash/Untitled.md",
+        "verdict": "passed",
+        "artifactRefs": [
+          "order-check"
+        ]
+      }
+    ],
+    "adversarialCases": [
+      {
+        "id": "stale-mermaid",
+        "criterionRef": "C001",
+        "scenario": "Mermaid code fences remain after replacement",
+        "expectedBehavior": "No mermaid fences found",
+        "verdict": "passed",
+        "artifactRefs": [
+          "markdown-image-links"
+        ]
+      },
+      {
+        "id": "broken-images",
+        "criterionRef": "C001",
+        "scenario": "Markdown links point to missing files",
+        "expectedBehavior": "All seven linked SVG files exist",
+        "verdict": "passed",
+        "artifactRefs": [
+          "markdown-image-links"
+        ]
+      },
+      {
+        "id": "invalid-svg",
+        "criterionRef": "C002",
+        "scenario": "SVG files are malformed or blank",
+        "expectedBehavior": "All SVGs parse and render to non-empty PNG files",
+        "verdict": "passed",
+        "artifactRefs": [
+          "svg-render-check",
+          "rendered-png"
+        ]
+      },
+      {
+        "id": "scope-drift",
+        "criterionRef": "scope",
+        "scenario": "Dirty worktree includes unrelated paths",
+        "expectedBehavior": "Task-owned paths are explicitly tied out and unrelated dirty paths are not touched",
+        "verdict": "passed",
+        "artifactRefs": [
+          "dirty-scope"
+        ]
+      }
+    ],
+    "artifactRefs": [
+      {
+        "id": "markdown-image-links",
+        "kind": "log",
+        "description": "Markdown image link and no-Mermaid evidence",
+        "path": ".omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/markdown-image-links.txt"
+      },
+      {
+        "id": "svg-render-check",
+        "kind": "log",
+        "description": "SVG XML and render evidence",
+        "path": ".omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/svg-render-check.txt"
+      },
+      {
+        "id": "rendered-png",
+        "kind": "log",
+        "description": "Rendered PNG directory for visual inspection",
+        "path": ".omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/rendered-png"
+      },
+      {
+        "id": "order-check",
+        "kind": "log",
+        "description": "Section order check",
+        "path": ".omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/order-check.txt"
+      },
+      {
+        "id": "manual-qa-matrix",
+        "kind": "log",
+        "description": "Manual QA matrix",
+        "path": ".omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/manual-qa-matrix.md"
+      },
+      {
+        "id": "dirty-scope",
+        "kind": "log",
+        "description": "Dirty worktree scope tie-out",
+        "path": ".omo/ulw-loop/ch05-consistent-hash-structure-images/evidence/dirty-scope.txt"
+      }
+    ]
+  },
+  "gateReview": {
+    "by": "lazycodex-gate-reviewer",
+    "recommendation": "APPROVE",
+    "reportPath": ".omo/evidence/G001-replace-abstract-mermaid-diagrams-in-gate-review.md",
+    "evidence": "Gate Reviewer the 4th approved after remediation of code-review summary, manual QA matrix, quality gate, dirty scope tie-out, and notepad self-review/cleanup receipt.",
+    "blockers": []
+  },
+  "iteration": {
+    "fullRerun": true,
+    "status": "passed",
+    "rerunCommands": [
+      "rg image links/no mermaid",
+      "python XML parse SVGs",
+      "rsvg-convert SVGs to PNG",
+      "view_image spot checks"
+    ],
+    "evidence": "Three ULW criteria recorded PASS."
+  },
+  "criteriaCoverage": {
+    "totalCriteria": 3,
+    "passCount": 3,
+    "originalIntent": "Replace generic diagrams with actual consistent-hash structure pictures.",
+    "desiredOutcome": "Chapter 5 Markdown embeds seven SVG structure images matching the draft order.",
+    "userOutcomeReview": "The note now uses SVG hash-ring/server/key/virtual-node pictures, not Mermaid flowcharts.",
+    "adversarialClassesCovered": [
+      "stale_mermaid",
+      "broken_image_link",
+      "invalid_svg",
+      "dirty_scope"
+    ]
+  }
+}

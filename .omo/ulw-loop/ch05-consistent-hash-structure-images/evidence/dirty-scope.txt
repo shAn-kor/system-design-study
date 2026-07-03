@@ -1,0 +1,13 @@
+ M .DS_Store
+ M seonghun/.DS_Store
+?? .gitignore
+?? .omo/
+?? seonghun/chapter05-consistent-hash/
+?? seonghun/trash/
+
+Task-owned paths for this correction:
+?? seonghun/chapter05-consistent-hash/Untitled.md
+?? seonghun/chapter05-consistent-hash/images/
+?? .omo/ulw-loop/ch05-consistent-hash-structure-images/
+
+Unrelated or pre-existing dirty paths are not part of this request and were not reverted or staged.

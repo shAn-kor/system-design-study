@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="620" viewBox="0 0 980 620" role="img" aria-labelledby="title desc">
+  <title id="title">가상 노드와 물리 서버 매핑</title>
+  <desc id="desc">해시 링 위 여러 가상 노드가 실제 물리 서버로 매핑되는 구조</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#475569"/></marker>
+    <style>
+      .ring{fill:#f8fafc;stroke:#334155;stroke-width:5}
+      .v1{fill:#dbeafe;stroke:#2563eb;stroke-width:3}
+      .v2{fill:#dcfce7;stroke:#16a34a;stroke-width:3}
+      .v3{fill:#fef3c7;stroke:#d97706;stroke-width:3}
+      .physical{fill:#f1f5f9;stroke:#64748b;stroke-width:3}
+      .label{font-family:Arial,Apple SD Gothic Neo,sans-serif;font-size:22px;fill:#0f172a}
+      .small{font-family:Arial,Apple SD Gothic Neo,sans-serif;font-size:15px;fill:#334155}
+      .map{stroke:#475569;stroke-width:2;fill:none;marker-end:url(#arrow);stroke-dasharray:5 4}
+    </style>
+  </defs>
+  <rect width="980" height="620" fill="#fff"/>
+  <text x="40" y="48" class="label">가상 노드: 물리 서버 하나를 링 위 여러 위치에 분산 배치</text>
+  <circle cx="385" cy="320" r="190" class="ring"/>
+  <circle cx="385" cy="130" r="27" class="v1"/><text x="365" y="136" class="small">S1-1</text>
+  <circle cx="549" cy="225" r="27" class="v2"/><text x="529" y="231" class="small">S2-1</text>
+  <circle cx="549" cy="415" r="27" class="v3"/><text x="529" y="421" class="small">S3-1</text>
+  <circle cx="385" cy="510" r="27" class="v2"/><text x="365" y="516" class="small">S2-2</text>
+  <circle cx="221" cy="415" r="27" class="v1"/><text x="201" y="421" class="small">S1-2</text>
+  <circle cx="221" cy="225" r="27" class="v3"/><text x="201" y="231" class="small">S3-2</text>
+  <circle cx="475" cy="160" r="27" class="v3"/><text x="455" y="166" class="small">S3-3</text>
+  <circle cx="475" cy="480" r="27" class="v1"/><text x="455" y="486" class="small">S1-3</text>
+  <circle cx="160" cy="320" r="27" class="v2"/><text x="140" y="326" class="small">S2-3</text>
+  <rect x="690" y="155" width="190" height="70" rx="12" class="physical"/><text x="755" y="198" class="label">S1</text>
+  <rect x="690" y="275" width="190" height="70" rx="12" class="physical"/><text x="755" y="318" class="label">S2</text>
+  <rect x="690" y="395" width="190" height="70" rx="12" class="physical"/><text x="755" y="438" class="label">S3</text>
+  <path d="M412 130 C600 120 640 170 690 190" class="map"/>
+  <path d="M248 415 C595 420 640 220 690 190" class="map"/>
+  <path d="M502 480 C620 450 650 235 690 190" class="map"/>
+  <path d="M576 225 C630 240 650 285 690 310" class="map"/>
+  <path d="M385 483 C560 490 650 355 690 310" class="map"/>
+  <path d="M187 320 C540 320 620 310 690 310" class="map"/>
+  <path d="M576 415 C620 420 655 425 690 430" class="map"/>
+  <path d="M248 225 C560 230 635 385 690 430" class="map"/>
+  <path d="M502 160 C620 180 655 370 690 430" class="map"/>
+</svg>

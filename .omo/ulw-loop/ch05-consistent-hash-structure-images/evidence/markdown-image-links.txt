@@ -1,0 +1,12 @@
+# markdown image link check
+image links:
+15:![안정 해시 기본 구조](images/01-hash-ring-basic.svg)
+21:![서버 5대 구조에서 데이터 배치와 저장](images/02-five-server-placement.svg)
+29:![서버 추가 삭제 시 데이터 변경 범위](images/03-server-add-delete.svg)
+37:![가상 노드가 없을 때 불균등 분배](images/04-imbalance-without-vnodes.svg)
+47:![가상 노드와 실제 서버 배치 구조](images/05-virtual-node-mapping.svg)
+53:![가상 노드 사용 시 데이터 저장 모습](images/06-virtual-node-storage.svg)
+59:![가상 노드 사용 시 서버 추가 삭제 변경 범위](images/07-vnode-add-delete.svg)
+
+mermaid fences:
+NO_MERMAID_FENCES

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-labelledby="title desc">
+  <title id="title">가상 노드 없는 안정 해시의 불균등 분배</title>
+  <desc id="desc">물리 서버 하나가 링의 한 지점에만 배치될 때 구간 크기 차이로 특정 서버에 데이터가 몰리는 모습</desc>
+  <style>
+    .ring{fill:#f8fafc;stroke:#334155;stroke-width:5}
+    .server{fill:#dbeafe;stroke:#1d4ed8;stroke-width:3}
+    .hot{fill:#fee2e2;stroke:#dc2626;stroke-width:4}
+    .big{fill:none;stroke:#dc2626;stroke-width:18;stroke-linecap:round}
+    .smallSeg{fill:none;stroke:#16a34a;stroke-width:10;stroke-linecap:round}
+    .label{font-family:Arial,Apple SD Gothic Neo,sans-serif;font-size:22px;fill:#0f172a}
+    .small{font-family:Arial,Apple SD Gothic Neo,sans-serif;font-size:16px;fill:#334155}
+  </style>
+  <rect width="960" height="600" fill="#fff"/>
+  <text x="40" y="48" class="label">가상 노드가 없으면 서버 위치 간격이 곧 담당 데이터 양이 된다</text>
+  <circle cx="430" cy="310" r="190" class="ring"/>
+  <path d="M243 278 A190 190 0 0 1 515 141" class="big"/>
+  <path d="M524 144 A190 190 0 0 1 612 286" class="smallSeg"/>
+  <path d="M612 333 A190 190 0 0 1 456 498" class="smallSeg"/>
+  <circle cx="430" cy="120" r="34" class="server"/><text x="413" y="128" class="label">S1</text>
+  <circle cx="607" cy="240" r="34" class="server"/><text x="590" y="248" class="label">S2</text>
+  <circle cx="510" cy="482" r="34" class="server"/><text x="493" y="490" class="label">S3</text>
+  <circle cx="252" cy="410" r="34" class="server"/><text x="235" y="418" class="label">S4</text>
+  <circle cx="250" cy="250" r="34" class="hot"/><text x="233" y="258" class="label">S5</text>
+  <text x="95" y="170" class="small">S5가 맡는 구간이 큼</text>
+  <text x="95" y="200" class="small">많은 key가 S5로 몰림</text>
+  <text x="660" y="235" class="small">작은 구간</text>
+  <text x="625" y="455" class="small">작은 구간</text>
+  <rect x="650" y="70" width="250" height="96" rx="12" fill="#fef2f2" stroke="#fecaca"/>
+  <text x="670" y="105" class="small">서버 추가/삭제가 잦으면</text>
+  <text x="670" y="135" class="small">큰 구간을 맡는 서버가 hot spot</text>
+</svg>
