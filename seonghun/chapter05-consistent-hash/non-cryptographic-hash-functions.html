@@ -1,0 +1,2517 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>비암호학적 해시 함수 상세 분석</title>
+    <style>
+      :root {
+        --bg: #090d18;
+        --panel: #111936;
+        --panel2: #172346;
+        --line: #2b3a6f;
+        --text: #eef4ff;
+        --muted: #aebbe0;
+        --dim: #7f8db9;
+        --blue: #73d2ff;
+        --green: #9cff8b;
+        --yellow: #ffd166;
+        --red: #ff6b6b;
+        --purple: #c7a6ff;
+        --shadow: 0 26px 90px rgba(0, 0, 0, 0.34);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background:
+          radial-gradient(
+            circle at 12% 0%,
+            rgba(115, 210, 255, 0.22),
+            transparent 28rem
+          ),
+          radial-gradient(
+            circle at 88% 6%,
+            rgba(156, 255, 139, 0.13),
+            transparent 24rem
+          ),
+          linear-gradient(180deg, #081020, var(--bg) 45%, #060911);
+        color: var(--text);
+        line-height: 1.68;
+      }
+      main {
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 44px 22px 88px;
+      }
+      h1 {
+        font-size: clamp(2.25rem, 5vw, 4.55rem);
+        line-height: 1.04;
+        letter-spacing: -0.06em;
+        margin: 0 0 18px;
+      }
+      h2 {
+        font-size: clamp(1.55rem, 3vw, 2.35rem);
+        letter-spacing: -0.04em;
+        margin: 0 0 16px;
+      }
+      h3 {
+        font-size: 1.32rem;
+        margin: 0 0 8px;
+      }
+      h4 {
+        margin: 18px 0 8px;
+        color: #fff;
+      }
+      p {
+        margin: 0 0 13px;
+        color: var(--muted);
+      }
+      strong {
+        color: #fff;
+      }
+      code {
+        color: #d9ffa6;
+        background: rgba(255, 255, 255, 0.075);
+        padding: 2px 6px;
+        border-radius: 7px;
+      }
+      .hero,
+      .card,
+      .algo {
+        border: 1px solid rgba(255, 255, 255, 0.105);
+        background: linear-gradient(
+          180deg,
+          rgba(17, 25, 54, 0.94),
+          rgba(10, 15, 31, 0.94)
+        );
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+      }
+      .hero {
+        padding: 42px;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero:after {
+        content: "";
+        position: absolute;
+        right: -90px;
+        bottom: -140px;
+        width: 450px;
+        height: 450px;
+        background: radial-gradient(
+          circle,
+          rgba(115, 210, 255, 0.2),
+          transparent 66%
+        );
+      }
+      .badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 22px;
+      }
+      .badge,
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.055);
+        border-radius: 999px;
+        padding: 7px 11px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .tag {
+        font-size: 0.82rem;
+        padding: 4px 8px;
+        font-weight: 700;
+      }
+      .tag.blue {
+        color: var(--blue);
+        background: rgba(115, 210, 255, 0.11);
+      }
+      .tag.green {
+        color: var(--green);
+        background: rgba(156, 255, 139, 0.1);
+      }
+      .tag.yellow {
+        color: var(--yellow);
+        background: rgba(255, 209, 102, 0.12);
+      }
+      .tag.red {
+        color: var(--red);
+        background: rgba(255, 107, 107, 0.12);
+      }
+      .tag.purple {
+        color: var(--purple);
+        background: rgba(199, 166, 255, 0.12);
+      }
+      section {
+        margin-top: 34px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 18px;
+      }
+      .card {
+        padding: 24px;
+      }
+      .wide {
+        grid-column: 1/-1;
+      }
+      .half {
+        grid-column: span 6;
+      }
+      .third {
+        grid-column: span 4;
+      }
+      .toc {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .toc a {
+        text-decoration: none;
+        color: var(--text);
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 13px;
+        border-radius: 15px;
+      }
+      .toc small {
+        display: block;
+        color: var(--dim);
+        margin-top: 4px;
+      }
+      .flow {
+        min-height: 230px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.035);
+        border-radius: 22px;
+        padding: 12px;
+        overflow: hidden;
+      }
+      svg text {
+        font-family: inherit;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 18px;
+        overflow: hidden;
+      }
+      .comparison-intro {
+        display: grid;
+        gap: 12px;
+      }
+      .comparison-intro h2,
+      .comparison-intro p {
+        margin: 0;
+      }
+      .kid-note {
+        border-left: 4px solid var(--yellow);
+        background: rgba(255, 209, 102, 0.08);
+        border-radius: 0 16px 16px 0;
+        padding: 14px 16px;
+      }
+      .kid-note p {
+        margin-top: 6px;
+        color: var(--muted);
+      }
+      .process-diagrams {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 6px;
+      }
+      .process-card {
+        margin: 0;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.035);
+        border-radius: 20px;
+        padding: 18px;
+      }
+      .process-card figcaption {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .process-card figcaption strong {
+        font-size: 1.08rem;
+      }
+      .process-track {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        align-items: stretch;
+        gap: 7px;
+      }
+      .process-step {
+        position: relative;
+        min-width: 0;
+        min-height: 142px;
+        border: 1px solid rgba(115, 210, 255, 0.22);
+        background: rgba(7, 11, 22, 0.7);
+        border-radius: 14px;
+        padding: 12px 10px 10px;
+      }
+      .process-step:not(:last-child)::after {
+        content: "→";
+        position: absolute;
+        right: -13px;
+        top: 50%;
+        z-index: 2;
+        color: var(--green);
+        font-size: 1.2rem;
+        font-weight: 900;
+        transform: translateY(-50%);
+      }
+      .step-number {
+        display: grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        margin-bottom: 10px;
+        border-radius: 50%;
+        color: #07101e;
+        background: var(--blue);
+        font-weight: 900;
+        font-size: 0.82rem;
+      }
+      .process-step h4 {
+        margin: 0 0 6px;
+        color: #fff;
+        font-size: 0.94rem;
+        line-height: 1.35;
+        word-break: keep-all;
+        overflow-wrap: normal;
+      }
+      .process-step p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.5;
+        word-break: keep-all;
+      }
+      .process-step code {
+        display: inline-block;
+        margin-top: 6px;
+        color: var(--yellow);
+        font-size: 0.76rem;
+      }
+      .lane-stack {
+        display: grid;
+        gap: 3px;
+        margin-top: 7px;
+      }
+      .lane-stack i {
+        display: block;
+        height: 5px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--blue), var(--green));
+      }
+      .lane-stack i:nth-child(2) {
+        opacity: 0.76;
+      }
+      .lane-stack i:nth-child(3) {
+        opacity: 0.52;
+      }
+      .process-result {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border: 1px solid rgba(156, 255, 139, 0.32);
+        border-radius: 12px;
+        background: rgba(156, 255, 139, 0.08);
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+      .process-result strong {
+        color: var(--green);
+      }
+      .process-note {
+        margin: 10px 0 0;
+        color: var(--dim);
+        font-size: 0.82rem;
+      }
+      .comparison-table-wrap {
+        margin-top: 20px;
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+      }
+      .comparison-table {
+        min-width: 780px;
+      }
+      .comparison-table th:first-child {
+        width: 132px;
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: #172346;
+      }
+      .comparison-table thead th:first-child {
+        z-index: 3;
+      }
+      .comparison-table td {
+        color: var(--muted);
+      }
+      .comparison-table th,
+      .comparison-table td {
+        word-break: keep-all;
+      }
+      .comparison-table td strong {
+        color: #fff;
+      }
+      .comparison-bottom {
+        margin-top: 18px;
+      }
+      th,
+      td {
+        padding: 13px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: rgba(115, 210, 255, 0.12);
+        color: #fff;
+      }
+      td:first-child {
+        font-weight: 800;
+        color: #fff;
+      }
+      tr:last-child td {
+        border-bottom: 0;
+      }
+      .algo {
+        padding: 26px;
+        margin-top: 24px;
+      }
+      .algo-head {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 18px;
+        align-items: start;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 16px;
+        margin-bottom: 18px;
+      }
+      .algo-title {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .algo-title h2 {
+        margin: 0;
+      }
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .algo-body {
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+        gap: 22px;
+        align-items: start;
+      }
+      .explain {
+        display: grid;
+        gap: 14px;
+      }
+      .box {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 18px;
+        padding: 16px;
+      }
+      .box p:last-child {
+        margin-bottom: 0;
+      }
+      .box p,
+      .box li {
+        word-break: keep-all;
+      }
+      .bullets {
+        margin: 8px 0 0;
+        padding-left: 20px;
+        color: var(--muted);
+      }
+      .bullets li {
+        margin: 6px 0;
+      }
+      .scores {
+        display: grid;
+        gap: 9px;
+        margin-top: 10px;
+      }
+      .score {
+        display: grid;
+        grid-template-columns: 96px 1fr 42px;
+        gap: 10px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .bar {
+        height: 11px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .bar span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, var(--blue), var(--green));
+        border-radius: inherit;
+      }
+      .mini-code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.88rem;
+        white-space: pre-wrap;
+        color: #dce7ff;
+        background: #070b16;
+        border: 1px solid #24305e;
+        border-radius: 16px;
+        padding: 14px;
+        overflow: auto;
+      }
+      .note {
+        border-left: 4px solid var(--blue);
+        background: rgba(115, 210, 255, 0.08);
+        border-radius: 16px;
+        padding: 16px;
+      }
+      .warn {
+        border-left-color: var(--yellow);
+        background: rgba(255, 209, 102, 0.09);
+      }
+      .danger {
+        border-left-color: var(--red);
+        background: rgba(255, 107, 107, 0.09);
+      }
+      footer {
+        margin-top: 38px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      @media (max-width: 920px) {
+        .half,
+        .third {
+          grid-column: 1/-1;
+        }
+        .algo-body,
+        .algo-head {
+          grid-template-columns: 1fr;
+        }
+        .meta {
+          justify-content: flex-start;
+        }
+        .toc {
+          grid-template-columns: 1fr 1fr;
+        }
+        .hero {
+          padding: 28px;
+        }
+        .process-diagrams {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 560px) {
+        .toc {
+          grid-template-columns: 1fr;
+        }
+        #choose {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        #choose table {
+          min-width: 480px;
+        }
+        .score {
+          grid-template-columns: 82px 1fr 38px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="hero">
+        <h1>비암호학적 해시 함수<br />그림으로 뜯어보기</h1>
+        <p>
+          사용자가 원한 핵심은 “표”가 아니라 각 함수가
+          <strong
+            >무슨 방식으로 데이터를 섞고, 어디에 강하고, 어디에 약한지</strong
+          >다. 그래서 아래는 알고리즘별로 동작 직관, 그림, 실무 판단 기준을 따로
+          정리했다.
+        </p>
+        <div class="badges">
+          <span class="badge">해시테이블</span
+          ><span class="badge">파일 중복 탐지</span
+          ><span class="badge">체크섬</span
+          ><span class="badge">샤딩·파티셔닝</span
+          ><span class="badge">보안용 아님</span>
+        </div>
+      </header>
+
+      <section class="card wide">
+        <h2>먼저 큰 그림: “빠르게 섞기”와 “오류 검출”은 다르다</h2>
+        <div class="grid">
+          <div class="half">
+            <div class="flow">
+              <svg
+                viewBox="0 0 560 250"
+                width="100%"
+                height="100%"
+                aria-label="비암호학적 해시 흐름"
+              >
+                <defs>
+                  <linearGradient id="grad" x1="0" x2="1">
+                    <stop offset="0" stop-color="#73d2ff" />
+                    <stop offset="1" stop-color="#9cff8b" />
+                  </linearGradient>
+                </defs>
+                <rect
+                  x="22"
+                  y="54"
+                  width="135"
+                  height="132"
+                  rx="20"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text
+                  x="90"
+                  y="92"
+                  fill="#fff"
+                  text-anchor="middle"
+                  font-size="18"
+                  font-weight="800"
+                >
+                  입력
+                </text>
+                <text
+                  x="90"
+                  y="124"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="14"
+                >
+                  key, file
+                </text>
+                <text
+                  x="90"
+                  y="148"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="14"
+                >
+                  bytes
+                </text>
+                <path
+                  d="M176 120h70"
+                  stroke="url(#grad)"
+                  stroke-width="7"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M236 102l24 18-24 18"
+                  fill="none"
+                  stroke="url(#grad)"
+                  stroke-width="7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <rect
+                  x="270"
+                  y="42"
+                  width="155"
+                  height="156"
+                  rx="24"
+                  fill="#0b132b"
+                  stroke="#73d2ff"
+                />
+                <text
+                  x="348"
+                  y="82"
+                  fill="#73d2ff"
+                  text-anchor="middle"
+                  font-size="18"
+                  font-weight="900"
+                >
+                  mix
+                </text>
+                <text
+                  x="348"
+                  y="116"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="14"
+                >
+                  곱하기
+                </text>
+                <text
+                  x="348"
+                  y="140"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="14"
+                >
+                  회전
+                </text>
+                <text
+                  x="348"
+                  y="164"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="14"
+                >
+                  xor
+                </text>
+                <path
+                  d="M440 120h48"
+                  stroke="url(#grad)"
+                  stroke-width="7"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M480 102l24 18-24 18"
+                  fill="none"
+                  stroke="url(#grad)"
+                  stroke-width="7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <rect
+                  x="505"
+                  y="72"
+                  width="42"
+                  height="96"
+                  rx="14"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text
+                  x="526"
+                  y="115"
+                  fill="#9cff8b"
+                  text-anchor="middle"
+                  font-size="14"
+                  font-weight="900"
+                >
+                  64
+                </text>
+                <text
+                  x="526"
+                  y="138"
+                  fill="#9cff8b"
+                  text-anchor="middle"
+                  font-size="14"
+                  font-weight="900"
+                >
+                  bit
+                </text>
+              </svg>
+            </div>
+            <h3>해시테이블·중복 탐지형</h3>
+            <p>
+              xxHash, MurmurHash3, CityHash, FarmHash, FNV-1a, Jenkins는 입력을
+              빠르게 섞어서 균등한 숫자로 보내는 것이 목적이다.
+            </p>
+          </div>
+          <div class="half">
+            <div class="flow">
+              <svg
+                viewBox="0 0 560 250"
+                width="100%"
+                height="100%"
+                aria-label="체크섬 흐름"
+              >
+                <rect
+                  x="24"
+                  y="52"
+                  width="118"
+                  height="136"
+                  rx="20"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text
+                  x="83"
+                  y="92"
+                  fill="#fff"
+                  text-anchor="middle"
+                  font-size="17"
+                  font-weight="800"
+                >
+                  데이터
+                </text>
+                <text
+                  x="83"
+                  y="128"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="14"
+                >
+                  101101...
+                </text>
+                <path
+                  d="M160 120h62"
+                  stroke="#ffd166"
+                  stroke-width="7"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M212 102l24 18-24 18"
+                  fill="none"
+                  stroke="#ffd166"
+                  stroke-width="7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <rect
+                  x="252"
+                  y="44"
+                  width="154"
+                  height="152"
+                  rx="24"
+                  fill="#221d12"
+                  stroke="#ffd166"
+                />
+                <text
+                  x="329"
+                  y="82"
+                  fill="#ffd166"
+                  text-anchor="middle"
+                  font-size="18"
+                  font-weight="900"
+                >
+                  checksum
+                </text>
+                <text
+                  x="329"
+                  y="120"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="14"
+                >
+                  나눗셈/합산
+                </text>
+                <text
+                  x="329"
+                  y="145"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="14"
+                >
+                  오류 패턴 감지
+                </text>
+                <path
+                  d="M425 120h54"
+                  stroke="#ffd166"
+                  stroke-width="7"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M469 102l24 18-24 18"
+                  fill="none"
+                  stroke="#ffd166"
+                  stroke-width="7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <circle
+                  cx="520"
+                  cy="120"
+                  r="31"
+                  fill="#2b2718"
+                  stroke="#ffd166"
+                />
+                <text
+                  x="520"
+                  y="126"
+                  fill="#ffd166"
+                  text-anchor="middle"
+                  font-size="18"
+                  font-weight="900"
+                >
+                  OK?
+                </text>
+              </svg>
+            </div>
+            <h3>오류 검출형</h3>
+            <p>
+              CRC32/CRC64, Adler-32는 “균등 분포”보다 전송·저장 중 비트가
+              깨졌는지를 잡는 쪽에 가깝다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card wide">
+        <h2>목차</h2>
+        <nav class="toc">
+          <a href="#xxh">xxHash / XXH3<small>현대적 고속 기본값</small></a>
+          <a href="#murmur">MurmurHash3<small>범용·생태계 강함</small></a>
+          <a href="#cityfarm"
+            >CityHash / FarmHash<small>Google 계열 문자열 해시</small></a
+          >
+          <a href="#fnv">FNV-1a<small>가장 단순한 곱/xor</small></a>
+          <a href="#jenkins"
+            >Jenkins hash<small>고전적 avalanche 해시</small></a
+          >
+          <a href="#crc">CRC32 / CRC64<small>오류 검출 코드</small></a>
+          <a href="#adler">Adler-32<small>가벼운 합 기반 체크섬</small></a>
+          <a href="#choose">선택 가이드<small>상황별 추천</small></a>
+        </nav>
+      </section>
+
+      <section
+        class="card wide"
+        id="murmur-xxh-comparison"
+        data-comparison="murmur-vs-xxh3"
+      >
+        <div class="comparison-intro">
+          <div>
+            <span class="tag yellow">둘 다 비암호학적 해시</span>
+            <span class="tag blue">안정 해시에 사용 가능</span>
+          </div>
+          <h2>MurmurHash3와 XXH3, 같은 일을 하는 두 믹서</h2>
+          <p>
+            둘 다 긴 문자열이나 숫자 키를 고정된 숫자로 바꿔 준다. 그 숫자를
+            해시 링 위의 위치로 쓰면, 키를 여러 서버에 나눠 담을 수 있다.
+            차이는 숫자를 섞는 방법, 속도를 노리는 방향, 기존 시스템과의
+            호환성이다.
+          </p>
+          <div class="kid-note">
+            <strong>초등학생식 비유</strong>
+            <p>
+              친구 이름을 받아서 사물함 번호로 바꾸는 기계가 있다고 하자.
+              MurmurHash3와 XXH3는 둘 다 이름을 번호로 바꾸지만, 안에서
+              번호를 섞는 레시피가 다르다. 그래서 같은 이름도 두 기계에서는
+              다른 번호가 나올 수 있다.
+            </p>
+          </div>
+        </div>
+
+        <div class="process-diagrams" aria-label="MurmurHash3와 XXH3의 해시 계산 과정">
+          <figure class="process-card">
+            <figcaption>
+              <strong>MurmurHash3가 숫자를 만드는 과정</strong>
+              <span class="tag purple">차례대로 섞기</span>
+            </figcaption>
+            <div class="process-track">
+              <div class="process-step">
+                <span class="step-number">1</span>
+                <h4>바이트로 바꾸기</h4>
+                <p>이름을 바이트로 바꾸고 긴 입력은 16바이트씩 나눈다.</p>
+                <code>"cat" → 63 61 74</code>
+              </div>
+              <div class="process-step">
+                <span class="step-number">2</span>
+                <h4>블록 섞기</h4>
+                <p>각 블록을 곱하고, 비트를 돌리고, 현재 상태에 XOR한다.</p>
+                <code>× → rotate → XOR</code>
+              </div>
+              <div class="process-step">
+                <span class="step-number">3</span>
+                <h4>상태 합치기</h4>
+                <p>h1과 h2를 서로 더해 입력의 다른 부분을 함께 반영한다.</p>
+                <code>h1 ↔ h2</code>
+              </div>
+              <div class="process-step">
+                <span class="step-number">4</span>
+                <h4>마지막 흔들기</h4>
+                <p>남은 바이트와 길이를 넣고 차이를 결과 전체로 퍼뜨린다.</p>
+                <code>fmix / avalanche</code>
+              </div>
+            </div>
+            <div class="process-result">
+              결과: <strong>32비트 또는 128비트 숫자</strong>가 나온다.
+              안정 해시에서는 이 숫자를 링 위의 위치로 사용한다.
+            </div>
+            <p class="process-note">
+              ※ 위 그림은 대표적인 MurmurHash3 흐름이다. x86_32, x86_128,
+              x64_128 변형에 따라 블록 크기와 내부 상수는 달라진다.
+            </p>
+          </figure>
+
+          <figure class="process-card">
+            <figcaption>
+              <strong>XXH3가 숫자를 만드는 과정</strong>
+              <span class="tag green">빠르게 나눠 처리</span>
+            </figcaption>
+            <div class="process-track">
+              <div class="process-step">
+                <span class="step-number">1</span>
+                <h4>바이트와 길이</h4>
+                <p>입력을 바이트로 읽고 데이터가 몇 바이트인지 센다.</p>
+                <code>bytes + length</code>
+              </div>
+              <div class="process-step">
+                <span class="step-number">2</span>
+                <h4>길이별 경로 선택</h4>
+                <p>짧은 입력과 긴 입력을 같은 방식으로 처리하지 않는다.</p>
+                <code>short / long path</code>
+              </div>
+              <div class="process-step">
+                <span class="step-number">3</span>
+                <h4>여러 통으로 섞기</h4>
+                <p>긴 입력은 64바이트 줄로 읽어 여러 누산기에 나눈다.</p>
+                <span class="lane-stack" aria-label="여러 누산기가 동시에 처리하는 모습">
+                  <i></i><i></i><i></i>
+                </span>
+                <code>8 accumulators</code>
+              </div>
+              <div class="process-step">
+                <span class="step-number">4</span>
+                <h4>결과 합치기</h4>
+                <p>secret과 XOR·곱셈을 하고 누산기를 합쳐 골고루 섞는다.</p>
+                <code>XOR → × → merge</code>
+              </div>
+            </div>
+            <div class="process-result">
+              결과: <strong>64비트 또는 128비트 숫자</strong>가 나온다.
+              긴 데이터를 여러 통이 나눠 처리해서 속도가 빠르다.
+            </div>
+            <p class="process-note">
+              ※ 입력 길이에 따라 짧은 전용 경로와 긴 입력용 누산기 경로가
+              달라진다는 점이 XXH3의 핵심이다.
+            </p>
+          </figure>
+        </div>
+
+        <div class="grid name-origin" aria-label="두 해시 알고리즘 이름의 뜻">
+          <div class="box half">
+            <div>
+              <span class="tag purple">이름 뜯어보기</span>
+              <span class="tag blue">MurmurHash3</span>
+            </div>
+            <h3>곱하고 돌리는 해시의 3번째 설계</h3>
+            <p>
+              <strong>Murmur</strong>는 내부에서 자주 쓰는 두 동작을 줄여 부른
+              이름이다. <strong>MU</strong>는 Multiply, 숫자를 곱하는 동작이고
+              <strong>R</strong>은 Rotate, 비트를 빙글 돌리는 동작이다.
+            </p>
+            <p>
+              뒤의 <strong>Hash</strong>는 입력을 숫자로 바꾼다는 뜻이고,
+              <strong>3</strong>은 MurmurHash 계열의 세 번째 설계 세대라는
+              뜻이다.
+            </p>
+            <div class="process-result">
+              <strong>MU + R + Hash + 3</strong><br />
+              “곱하고 돌려서 섞는 Murmur 계열의 3번째 해시”
+            </div>
+          </div>
+          <div class="box half">
+            <div>
+              <span class="tag green">이름 뜯어보기</span>
+              <span class="tag blue">XXH3</span>
+            </div>
+            <h3>아주 빠른 xxHash 계열의 새 설계</h3>
+            <p>
+              <strong>xxHash</strong>는 공식 저장소에서
+              <strong>Extremely fast Hash algorithm</strong>, 즉 “매우 빠른
+              해시 알고리즘”이라고 설명한다.
+            </p>
+            <p>
+              <strong>XXH</strong>는 함수 이름에 붙는 계열 표시이고,
+              <strong>3</strong>은 XXH32·XXH64와 구분되는 XXH3 설계를 가리킨다.
+              다만 <strong>xx</strong> 각각을 어떤 단어의 약자로 정했다는 공식
+              설명은 없다.
+            </p>
+            <div class="process-result">
+              <strong>xxHash + 3</strong><br />
+              “빠른 xxHash 계열에서 나온 XXH3 설계”
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-table-wrap">
+          <table class="comparison-table">
+            <caption>
+              MurmurHash3와 XXH3의 기능과 특징 비교
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">비교할 점</th>
+                <th scope="col">MurmurHash3</th>
+                <th scope="col">XXH3</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">한 줄 요약</th>
+                <td>
+                  <strong>오래 검증된 범용 믹서.</strong> 여러 언어와 시스템에서
+                  찾기 쉽다.
+                </td>
+                <td>
+                  <strong>현대 CPU를 겨냥한 고속 믹서.</strong> 큰 입력과 많은
+                  키를 빠르게 처리하는 데 초점을 둔다.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">어린이 비유</th>
+                <td>
+                  종이를 작은 칸으로 나눠 곱하고, 돌리고, xor한 뒤 마지막에
+                  한 번 더 골고루 흔드는 번호표 기계
+                </td>
+                <td>
+                  큰 종이를 여러 줄(lane)로 나눠 동시에 섞고, 마지막에 하나의
+                  번호로 합치는 빠른 믹서
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">섞는 방식</th>
+                <td>
+                  블록을 <strong>곱하기 → 회전 → xor</strong>로 섞고, 마지막
+                  <strong>avalanche</strong> 단계에서 작은 차이도 넓게 퍼뜨린다.
+                </td>
+                <td>
+                  입력 길이에 맞는 경로를 고르고, 여러 <strong>lane</strong>과
+                  accumulator를 활용해 섞은 뒤 64bit 또는 128bit 결과를 만든다.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">속도 감각</th>
+                <td>
+                  <strong>높음.</strong> 범용성과 구현체 생태계를 함께 챙기는
+                  선택이다.
+                </td>
+                <td>
+                  <strong>매우 높음을 목표로 함.</strong> 특히 현대 CPU에서 많은
+                  데이터를 처리할 때 강점이 드러난다.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">출력 크기</th>
+                <td>
+                  변형에 따라 <strong>32bit 또는 128bit</strong>를 쓴다.
+                </td>
+                <td>
+                  보통 <strong>64bit 또는 128bit</strong>를 선택한다. 출력 공간이
+                  넓을수록 충돌 가능성을 낮추는 데 유리하다.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">충돌과 보안</th>
+                <td>
+                  서로 다른 키가 같은 숫자가 되는 충돌은 가능하다. <strong>보안용
+                  해시가 아니므로</strong> 공격자가 일부러 충돌을 만들 수 있는
+                  상황에는 쓰지 않는다.
+                </td>
+                <td>
+                  마찬가지로 충돌은 가능하고 <strong>보안용 해시가 아니다.</strong>
+                  비밀번호 저장에는 Argon2id·scrypt·bcrypt·PBKDF2처럼 전용
+                  password hashing/KDF 계열을 검토한다.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">안정 해시에서</th>
+                <td>
+                  서버 이름이나 가상 노드 이름을 숫자로 바꿔 <strong>링 위의 위치</strong>를
+                  정한다.
+                </td>
+                <td>
+                  같은 역할을 하되, 키가 아주 많거나 재배치 계산이 잦을 때
+                  <strong>속도 우선 믹서</strong>로 고려한다.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">강점</th>
+                <td>
+                  자료와 구현체가 많고, 다른 언어·기존 시스템과 맞추기 쉽다.
+                </td>
+                <td>
+                  빠른 처리량, 64/128bit 선택지, 짧은 입력과 긴 입력을 모두
+                  고려한 설계가 강점이다.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">주의할 점</th>
+                <td>
+                  버전과 변형(MurmurHash3_x86_32, x64_128 등)을 정확히 고정해야
+                  다른 프로그램과 결과가 달라지지 않는다.
+                </td>
+                <td>
+                  XXH3와 기존 xxHash 변형을 구분하고, 사용하는 라이브러리의
+                  시드·출력 폭·바이트 처리 규칙을 고정해야 한다.
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">고르는 법</th>
+                <td>
+                  기존 시스템과 결과를 맞춰야 하거나, 여러 플랫폼에서 쉽게
+                  구현해야 하면 먼저 검토한다.
+                </td>
+                <td>
+                  새 시스템에서 <strong>처리 속도가 가장 중요</strong>하고, 팀이
+                  XXH3 구현을 안정적으로 고정할 수 있으면 검토한다.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid comparison-bottom">
+          <div class="box half">
+            <h3>둘의 공통 흐름</h3>
+            <ol class="bullets">
+              <li>키를 바이트로 읽는다.</li>
+              <li>곱하기, 회전, xor 같은 규칙으로 잘 섞는다.</li>
+              <li>고정된 숫자 하나를 만든다.</li>
+              <li>그 숫자를 해시 링에서 찾고, 시계 방향의 서버를 고른다.</li>
+            </ol>
+          </div>
+          <div class="box half">
+            <h3>결론만 기억하면</h3>
+            <p>
+              <strong>속도 우선이면 XXH3</strong>, 기존 결과·자료·구현체와의
+              호환성이 중요하면 <strong>MurmurHash3</strong>를 먼저 살펴본다.
+              둘 다 비암호학적 해시이므로 보안 목적에는 쓰지 않는다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <article class="algo" id="xxh">
+        <div class="algo-head">
+          <div class="algo-title">
+            <h2>xxHash / XXH3</h2>
+            <span class="tag green">속도 최우선</span
+            ><span class="tag blue">64/128bit 추천</span>
+          </div>
+          <div class="meta">
+            <span class="tag">파일 식별</span><span class="tag">중복 탐지</span
+            ><span class="tag">컬럼 DB</span>
+          </div>
+        </div>
+        <div class="algo-body">
+          <div class="explain">
+            <div class="flow">
+              <svg viewBox="0 0 620 285" width="100%" height="100%">
+                <text
+                  x="24"
+                  y="35"
+                  fill="#fff"
+                  font-size="18"
+                  font-weight="800"
+                >
+                  XXH3: 큰 입력을 여러 lane으로 나눠 섞기
+                </text>
+                <rect
+                  x="24"
+                  y="58"
+                  width="116"
+                  height="42"
+                  rx="10"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text x="82" y="85" fill="#aebbe0" text-anchor="middle">
+                  block A
+                </text>
+                <rect
+                  x="24"
+                  y="112"
+                  width="116"
+                  height="42"
+                  rx="10"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text x="82" y="139" fill="#aebbe0" text-anchor="middle">
+                  block B
+                </text>
+                <rect
+                  x="24"
+                  y="166"
+                  width="116"
+                  height="42"
+                  rx="10"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text x="82" y="193" fill="#aebbe0" text-anchor="middle">
+                  block C
+                </text>
+                <path
+                  d="M155 79h80M155 133h80M155 187h80"
+                  stroke="#73d2ff"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M226 69l16 10-16 10M226 123l16 10-16 10M226 177l16 10-16 10"
+                  fill="none"
+                  stroke="#73d2ff"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <rect
+                  x="252"
+                  y="48"
+                  width="150"
+                  height="178"
+                  rx="22"
+                  fill="#0b132b"
+                  stroke="#73d2ff"
+                />
+                <text
+                  x="327"
+                  y="86"
+                  fill="#73d2ff"
+                  text-anchor="middle"
+                  font-size="17"
+                  font-weight="900"
+                >
+                  accumulators
+                </text>
+                <text x="327" y="123" fill="#aebbe0" text-anchor="middle">
+                  mul
+                </text>
+                <text x="327" y="151" fill="#aebbe0" text-anchor="middle">
+                  rotate
+                </text>
+                <text x="327" y="179" fill="#aebbe0" text-anchor="middle">
+                  xor
+                </text>
+                <path
+                  d="M418 137h70"
+                  stroke="#9cff8b"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                />
+                <path
+                  d="M480 127l16 10-16 10"
+                  fill="none"
+                  stroke="#9cff8b"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <rect
+                  x="505"
+                  y="88"
+                  width="86"
+                  height="98"
+                  rx="18"
+                  fill="#172b2a"
+                  stroke="#9cff8b"
+                />
+                <text
+                  x="548"
+                  y="129"
+                  fill="#9cff8b"
+                  text-anchor="middle"
+                  font-size="18"
+                  font-weight="900"
+                >
+                  XXH3
+                </text>
+                <text
+                  x="548"
+                  y="155"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="14"
+                >
+                  64/128
+                </text>
+              </svg>
+            </div>
+            <div class="box">
+              <h3>동작 직관</h3>
+              <p>
+                입력을 덩어리로 읽고, 여러 누산기(accumulator)에 곱셈·회전·xor를
+                반복해서 비트 변화를 빠르게 퍼뜨린다. XXH3는 최신 CPU에서 매우
+                높은 처리량을 노린 설계다.
+              </p>
+            </div>
+            <div class="box">
+              <h3>아이 눈높이 비유</h3>
+              <p>
+                학교 사물함 줄에서 이름표를 보고 “몇 번째 자리로 보낼까?”를
+                빠르게 정하는 도우미와 비슷하다. XXH3는 key를 암호로 숨기거나
+                절대 겹치지 않게 만드는 것이 아니라, key를 하나의 숫자로 바꾼다.
+              </p>
+            </div>
+            <div class="box">
+              <h3>동작 순서</h3>
+              <ol class="bullets">
+                <li>입력 key를 정해진 인코딩의 byte로 읽는다.</li>
+                <li>byte와 bit를 빠르게 섞어 작은 차이도 퍼뜨린다.</li>
+                <li>64bit 또는 128bit 같은 고정 크기 숫자를 만든다.</li>
+                <li>안정 해시에서는 그 숫자를 ring 위의 위치로 쓴다.</li>
+                <li>ring에서 시계 방향으로 가다가 처음 만나는 서버를 고른다.</li>
+              </ol>
+            </div>
+          </div>
+          <div class="explain">
+            <div class="box">
+              <h3>안정 해시에서의 역할</h3>
+              <p>
+                XXH3는 ring 안쪽의 “섞는 기계”다. 안정 해시는 숫자를 ring에 놓고
+                시계 방향 서버를 고르는 배치 규칙이며, virtual node가 있으면
+                서버 이름과 복제 번호도 같은 방식으로 섞어 여러 위치에 놓는다.
+              </p>
+            </div>
+            <div class="box">
+              <h3>언제 선택할까?</h3>
+              <p>
+                큰 key, 파일 조각, 로그처럼 많이 그리고 빨리 처리해야 하면 XXH3가
+                속도 우선 선택지다. 대신 비암호학적 해시라 충돌은 가능하고,
+                저장·통신 계약에는 seed, 인코딩, 출력 크기, 버전을 적어야 한다.
+              </p>
+            </div>
+            <div class="box">
+              <h3>장점</h3>
+              <ul class="bullets">
+                <li>대용량 데이터에서 처리량이 매우 좋다.</li>
+                <li>64bit/128bit 출력을 고르기 쉬워 충돌 위험 조절이 쉽다.</li>
+                <li>파일 fingerprint, 블록 dedup, 캐시 키에 적합하다.</li>
+              </ul>
+            </div>
+            <div class="box">
+              <h3>약점</h3>
+              <ul class="bullets">
+                <li>암호학적 충돌 저항을 제공하지 않는다.</li>
+                <li>
+                  데이터 포맷에 영구 저장하면 버전/구현 호환성을 명시해야 한다.
+                </li>
+              </ul>
+            </div>
+            <div class="scores">
+              <div class="score">
+                <span>속도</span>
+                <div class="bar"><span style="width: 97%"></span></div>
+                <b>최상</b>
+              </div>
+              <div class="score">
+                <span>분산</span>
+                <div class="bar"><span style="width: 90%"></span></div>
+                <b>높음</b>
+              </div>
+              <div class="score">
+                <span>단순성</span>
+                <div class="bar"><span style="width: 58%"></span></div>
+                <b>중간</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="algo" id="murmur">
+        <div class="algo-head">
+          <div class="algo-title">
+            <h2>MurmurHash3</h2>
+            <span class="tag green">범용</span
+            ><span class="tag purple">해시테이블 친화</span>
+          </div>
+          <div class="meta">
+            <span class="tag">Bloom filter</span><span class="tag">샤딩</span
+            ><span class="tag">분산 시스템</span>
+          </div>
+        </div>
+        <div class="algo-body">
+          <div class="explain">
+            <div class="flow">
+              <svg viewBox="0 0 620 285" width="100%" height="100%">
+                <text
+                  x="24"
+                  y="35"
+                  fill="#fff"
+                  font-size="18"
+                  font-weight="800"
+                >
+                  Murmur: 곱하기 → 회전 → xor → avalanche
+                </text>
+                <rect
+                  x="28"
+                  y="85"
+                  width="92"
+                  height="78"
+                  rx="18"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text x="74" y="129" fill="#aebbe0" text-anchor="middle">
+                  4/16B
+                </text>
+                <path d="M132 124h50" stroke="#73d2ff" stroke-width="5" />
+                <text
+                  x="157"
+                  y="106"
+                  fill="#73d2ff"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  × c1
+                </text>
+                <rect
+                  x="196"
+                  y="85"
+                  width="85"
+                  height="78"
+                  rx="18"
+                  fill="#0b132b"
+                  stroke="#73d2ff"
+                />
+                <text
+                  x="239"
+                  y="119"
+                  fill="#73d2ff"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  rotl
+                </text>
+                <text
+                  x="239"
+                  y="143"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  회전
+                </text>
+                <path d="M292 124h50" stroke="#73d2ff" stroke-width="5" />
+                <text
+                  x="317"
+                  y="106"
+                  fill="#73d2ff"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  × c2
+                </text>
+                <rect
+                  x="356"
+                  y="85"
+                  width="85"
+                  height="78"
+                  rx="18"
+                  fill="#0b132b"
+                  stroke="#73d2ff"
+                />
+                <text
+                  x="399"
+                  y="130"
+                  fill="#73d2ff"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  xor
+                </text>
+                <path d="M452 124h50" stroke="#9cff8b" stroke-width="5" />
+                <rect
+                  x="515"
+                  y="75"
+                  width="80"
+                  height="98"
+                  rx="18"
+                  fill="#172b2a"
+                  stroke="#9cff8b"
+                />
+                <text
+                  x="555"
+                  y="112"
+                  fill="#9cff8b"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  final
+                </text>
+                <text
+                  x="555"
+                  y="139"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  avalanche
+                </text>
+                <circle cx="93" cy="214" r="11" fill="#73d2ff" />
+                <circle cx="169" cy="214" r="11" fill="#9cff8b" />
+                <circle cx="245" cy="214" r="11" fill="#ffd166" />
+                <text x="320" y="220" fill="#aebbe0" font-size="15">
+                  한 비트 변화가 최종 출력 전반으로 퍼지는 효과
+                </text>
+              </svg>
+            </div>
+            <div class="box">
+              <h3>동작 직관</h3>
+              <p>
+                작은 블록을 상수와 곱하고 회전시키며 상태값에 섞는다. 마지막
+                avalanche 단계에서 입력의 작은 변화가 출력 전체에 퍼지게 만든다.
+              </p>
+            </div>
+            <div class="box">
+              <h3>아이 눈높이 비유</h3>
+              <p>
+                도서관 책장 앞에서 책 제목을 보고 “어느 번호표를 붙일까?”를
+                정하는 규칙과 비슷하다. MurmurHash3는 key를 안전하게 숨기는
+                암호가 아니고, 같은 방식으로 읽은 key를 정해진 크기의 숫자로
+                바꾼다.
+              </p>
+            </div>
+            <div class="box">
+              <h3>동작 순서</h3>
+              <ol class="bullets">
+                <li>입력 key를 정해진 인코딩의 byte로 읽는다.</li>
+                <li>byte와 bit를 곱셈, 회전, xor로 차례대로 섞는다.</li>
+                <li>32bit 또는 128bit 같은 고정 크기 숫자를 만든다.</li>
+                <li>안정 해시에서는 그 숫자를 ring 위의 위치로 쓴다.</li>
+                <li>ring에서 시계 방향으로 가다가 처음 만나는 서버를 고른다.</li>
+              </ol>
+            </div>
+          </div>
+          <div class="explain">
+            <div class="box">
+              <h3>안정 해시에서의 역할</h3>
+              <p>
+                MurmurHash3는 key와 virtual node 이름을 숫자로 바꾸는 mixer다.
+                consistent hashing은 그 숫자를 어디에 놓고 어떤 서버를 고를지
+                정하는 placement rule이다.
+              </p>
+            </div>
+            <div class="box">
+              <h3>언제 선택할까?</h3>
+              <p>
+                여러 언어의 구현체, 오래된 시스템, 일반적인 해시테이블·Bloom
+                filter와 맞추기 쉬운 선택지가 필요하면 MurmurHash3가 익숙한
+                범용 선택지다. XXH3보다 최고 속도는 낮을 수 있고, 비암호학적
+                해시라 충돌은 가능하므로 seed, endian, 인코딩, 버전을 문서에
+                고정해야 한다.
+              </p>
+            </div>
+            <div class="box">
+              <h3>장점</h3>
+              <ul class="bullets">
+                <li>많은 언어와 시스템에서 구현체가 있다.</li>
+                <li>
+                  해시테이블, Bloom filter, consistent hashing 주변에서
+                  익숙하다.
+                </li>
+                <li>32bit와 128bit 변형이 널리 쓰인다.</li>
+              </ul>
+            </div>
+            <div class="box">
+              <h3>약점</h3>
+              <ul class="bullets">
+                <li>xxHash/XXH3보다 최신 CPU 처리량은 낮을 수 있다.</li>
+                <li>
+                  seed와 endian/구현 차이를 문서화하지 않으면 호환 문제가
+                  생긴다.
+                </li>
+              </ul>
+            </div>
+            <div class="scores">
+              <div class="score">
+                <span>속도</span>
+                <div class="bar"><span style="width: 82%"></span></div>
+                <b>높음</b>
+              </div>
+              <div class="score">
+                <span>분산</span>
+                <div class="bar"><span style="width: 87%"></span></div>
+                <b>높음</b>
+              </div>
+              <div class="score">
+                <span>생태계</span>
+                <div class="bar"><span style="width: 94%"></span></div>
+                <b>최상</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="algo" id="cityfarm">
+        <div class="algo-head">
+          <div class="algo-title">
+            <h2>CityHash / FarmHash</h2>
+            <span class="tag yellow">문자열 최적화</span
+            ><span class="tag">Google 계열</span>
+          </div>
+          <div class="meta">
+            <span class="tag">string key</span><span class="tag">기존 호환</span
+            ><span class="tag">플랫폼 확인</span>
+          </div>
+        </div>
+        <div class="algo-body">
+          <div class="explain">
+            <div class="flow">
+              <svg viewBox="0 0 620 285" width="100%" height="100%">
+                <text
+                  x="24"
+                  y="35"
+                  fill="#fff"
+                  font-size="18"
+                  font-weight="800"
+                >
+                  길이에 따라 다른 빠른 경로를 타는 문자열 해시 직관
+                </text>
+                <rect
+                  x="30"
+                  y="70"
+                  width="120"
+                  height="48"
+                  rx="14"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text x="90" y="100" fill="#aebbe0" text-anchor="middle">
+                  짧은 문자열
+                </text>
+                <rect
+                  x="30"
+                  y="138"
+                  width="120"
+                  height="48"
+                  rx="14"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text x="90" y="168" fill="#aebbe0" text-anchor="middle">
+                  긴 문자열
+                </text>
+                <path
+                  d="M166 94h70M166 162h70"
+                  stroke="#ffd166"
+                  stroke-width="5"
+                />
+                <path
+                  d="M226 84l16 10-16 10M226 152l16 10-16 10"
+                  fill="none"
+                  stroke="#ffd166"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <rect
+                  x="255"
+                  y="55"
+                  width="135"
+                  height="150"
+                  rx="22"
+                  fill="#221d12"
+                  stroke="#ffd166"
+                />
+                <text
+                  x="323"
+                  y="93"
+                  fill="#ffd166"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  length
+                </text>
+                <text x="323" y="121" fill="#aebbe0" text-anchor="middle">
+                  별 분기
+                </text>
+                <text x="323" y="150" fill="#aebbe0" text-anchor="middle">
+                  상수 mix
+                </text>
+                <path d="M407 130h70" stroke="#9cff8b" stroke-width="5" />
+                <path
+                  d="M468 120l16 10-16 10"
+                  fill="none"
+                  stroke="#9cff8b"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <rect
+                  x="497"
+                  y="82"
+                  width="92"
+                  height="96"
+                  rx="18"
+                  fill="#172b2a"
+                  stroke="#9cff8b"
+                />
+                <text
+                  x="543"
+                  y="121"
+                  fill="#9cff8b"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  64/128
+                </text>
+                <text
+                  x="543"
+                  y="146"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  hash
+                </text>
+              </svg>
+            </div>
+            <div class="box">
+              <h3>동작 직관</h3>
+              <p>
+                문자열 길이에 따라 다른 빠른 경로를 두고, 앞·뒤·중간 조각을
+                상수와 섞는다. 짧은 문자열을 빠르게 처리하려는 최적화가
+                중요하다.
+              </p>
+            </div>
+          </div>
+          <div class="explain">
+            <div class="box">
+              <h3>장점</h3>
+              <ul class="bullets">
+                <li>문자열 키가 많은 워크로드에 잘 맞는다.</li>
+                <li>Google 계열 시스템과 연동할 때 기존 선택지로 등장한다.</li>
+              </ul>
+            </div>
+            <div class="box">
+              <h3>약점</h3>
+              <ul class="bullets">
+                <li>
+                  새 프로젝트의 보편적 기본값으로는 xxHash나 MurmurHash3가 더
+                  설명하기 쉽다.
+                </li>
+                <li>플랫폼·버전별 결과 안정성을 확인해야 한다.</li>
+              </ul>
+            </div>
+            <div class="scores">
+              <div class="score">
+                <span>속도</span>
+                <div class="bar"><span style="width: 86%"></span></div>
+                <b>높음</b>
+              </div>
+              <div class="score">
+                <span>문자열</span>
+                <div class="bar"><span style="width: 90%"></span></div>
+                <b>강함</b>
+              </div>
+              <div class="score">
+                <span>호환주의</span>
+                <div class="bar"><span style="width: 68%"></span></div>
+                <b>필요</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="algo" id="fnv">
+        <div class="algo-head">
+          <div class="algo-title">
+            <h2>FNV-1a</h2>
+            <span class="tag blue">가장 단순</span
+            ><span class="tag yellow">학습용 좋음</span>
+          </div>
+          <div class="meta">
+            <span class="tag">임베디드</span><span class="tag">작은 키</span
+            ><span class="tag">무의존성</span>
+          </div>
+        </div>
+        <div class="algo-body">
+          <div class="explain">
+            <div class="flow">
+              <svg viewBox="0 0 620 285" width="100%" height="100%">
+                <text
+                  x="24"
+                  y="35"
+                  fill="#fff"
+                  font-size="18"
+                  font-weight="800"
+                >
+                  FNV-1a는 byte마다 xor 후 prime을 곱한다
+                </text>
+                <rect
+                  x="34"
+                  y="86"
+                  width="86"
+                  height="78"
+                  rx="16"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text x="77" y="131" fill="#aebbe0" text-anchor="middle">
+                  byte
+                </text>
+                <path d="M135 125h47" stroke="#73d2ff" stroke-width="5" />
+                <rect
+                  x="194"
+                  y="86"
+                  width="86"
+                  height="78"
+                  rx="16"
+                  fill="#0b132b"
+                  stroke="#73d2ff"
+                />
+                <text
+                  x="237"
+                  y="131"
+                  fill="#73d2ff"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  xor
+                </text>
+                <path d="M294 125h47" stroke="#73d2ff" stroke-width="5" />
+                <rect
+                  x="353"
+                  y="86"
+                  width="96"
+                  height="78"
+                  rx="16"
+                  fill="#0b132b"
+                  stroke="#73d2ff"
+                />
+                <text
+                  x="401"
+                  y="119"
+                  fill="#73d2ff"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  × prime
+                </text>
+                <text
+                  x="401"
+                  y="144"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  overflow
+                </text>
+                <path d="M462 125h47" stroke="#9cff8b" stroke-width="5" />
+                <rect
+                  x="522"
+                  y="86"
+                  width="68"
+                  height="78"
+                  rx="16"
+                  fill="#172b2a"
+                  stroke="#9cff8b"
+                />
+                <text
+                  x="556"
+                  y="131"
+                  fill="#9cff8b"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  hash
+                </text>
+              </svg>
+            </div>
+            <div class="mini-code">
+              hash = FNV_OFFSET for each byte b: hash = hash XOR b hash = hash *
+              FNV_PRIME // 정수 overflow 허용
+            </div>
+          </div>
+          <div class="explain">
+            <div class="box">
+              <h3>장점</h3>
+              <ul class="bullets">
+                <li>몇 줄로 직접 구현 가능하다.</li>
+                <li>의존성 없는 작은 프로그램에 넣기 쉽다.</li>
+                <li>동작 원리를 설명하기 좋다.</li>
+              </ul>
+            </div>
+            <div class="box">
+              <h3>약점</h3>
+              <ul class="bullets">
+                <li>최신 해시에 비해 분산 품질과 속도가 떨어질 수 있다.</li>
+                <li>입력 패턴에 따라 낮은 비트 품질이 문제가 될 수 있다.</li>
+              </ul>
+            </div>
+            <div class="scores">
+              <div class="score">
+                <span>속도</span>
+                <div class="bar"><span style="width: 58%"></span></div>
+                <b>보통</b>
+              </div>
+              <div class="score">
+                <span>분산</span>
+                <div class="bar"><span style="width: 55%"></span></div>
+                <b>보통</b>
+              </div>
+              <div class="score">
+                <span>단순성</span>
+                <div class="bar"><span style="width: 99%"></span></div>
+                <b>최상</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="algo" id="jenkins">
+        <div class="algo-head">
+          <div class="algo-title">
+            <h2>Jenkins hash</h2>
+            <span class="tag purple">avalanche 고전</span
+            ><span class="tag">레거시</span>
+          </div>
+          <div class="meta">
+            <span class="tag">old codebase</span
+            ><span class="tag">lookup hash</span><span class="tag">범용</span>
+          </div>
+        </div>
+        <div class="algo-body">
+          <div class="explain">
+            <div class="flow">
+              <svg viewBox="0 0 620 285" width="100%" height="100%">
+                <text
+                  x="24"
+                  y="35"
+                  fill="#fff"
+                  font-size="18"
+                  font-weight="800"
+                >
+                  Jenkins류: add, shift, xor를 반복해 avalanche를 만든다
+                </text>
+                <circle
+                  cx="100"
+                  cy="126"
+                  r="45"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text x="100" y="132" fill="#aebbe0" text-anchor="middle">
+                  state
+                </text>
+                <path d="M160 126h55" stroke="#c7a6ff" stroke-width="5" />
+                <rect
+                  x="230"
+                  y="83"
+                  width="90"
+                  height="86"
+                  rx="18"
+                  fill="#180f28"
+                  stroke="#c7a6ff"
+                />
+                <text
+                  x="275"
+                  y="113"
+                  fill="#c7a6ff"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  add
+                </text>
+                <text
+                  x="275"
+                  y="139"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  shift
+                </text>
+                <path d="M335 126h55" stroke="#c7a6ff" stroke-width="5" />
+                <rect
+                  x="405"
+                  y="83"
+                  width="90"
+                  height="86"
+                  rx="18"
+                  fill="#180f28"
+                  stroke="#c7a6ff"
+                />
+                <text
+                  x="450"
+                  y="113"
+                  fill="#c7a6ff"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  xor
+                </text>
+                <text
+                  x="450"
+                  y="139"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  mix
+                </text>
+                <path
+                  d="M498 83 C560 40,590 84,540 126 C590 168,560 212,498 169"
+                  fill="none"
+                  stroke="#9cff8b"
+                  stroke-width="5"
+                />
+                <text
+                  x="552"
+                  y="132"
+                  fill="#9cff8b"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  avalanching
+                </text>
+              </svg>
+            </div>
+            <div class="box">
+              <h3>동작 직관</h3>
+              <p>
+                비트 이동과 xor, 덧셈을 반복해 작은 변화가 출력 전체로 퍼지게
+                한다. “one-at-a-time”, “lookup3” 같은 변형이 오래된 코드에서
+                보인다.
+              </p>
+            </div>
+          </div>
+          <div class="explain">
+            <div class="box">
+              <h3>장점</h3>
+              <ul class="bullets">
+                <li>역사적으로 많이 쓰여 레거시 코드 이해에 유용하다.</li>
+                <li>복잡한 곱셈 없이도 괜찮은 avalanche를 만들려는 설계다.</li>
+              </ul>
+            </div>
+            <div class="box">
+              <h3>약점</h3>
+              <ul class="bullets">
+                <li>현대 신규 선택지로는 우선순위가 낮다.</li>
+                <li>
+                  변형이 많아 “Jenkins hash”라고만 쓰면 정확한 호환성을 알기
+                  어렵다.
+                </li>
+              </ul>
+            </div>
+            <div class="scores">
+              <div class="score">
+                <span>속도</span>
+                <div class="bar"><span style="width: 64%"></span></div>
+                <b>보통</b>
+              </div>
+              <div class="score">
+                <span>분산</span>
+                <div class="bar"><span style="width: 72%"></span></div>
+                <b>양호</b>
+              </div>
+              <div class="score">
+                <span>레거시</span>
+                <div class="bar"><span style="width: 86%"></span></div>
+                <b>강함</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="algo" id="crc">
+        <div class="algo-head">
+          <div class="algo-title">
+            <h2>CRC32 / CRC64</h2>
+            <span class="tag yellow">오류 검출</span
+            ><span class="tag red">보안 아님</span>
+          </div>
+          <div class="meta">
+            <span class="tag">네트워크</span><span class="tag">파일 포맷</span
+            ><span class="tag">스토리지</span>
+          </div>
+        </div>
+        <div class="algo-body">
+          <div class="explain">
+            <div class="flow">
+              <svg viewBox="0 0 620 285" width="100%" height="100%">
+                <text
+                  x="24"
+                  y="35"
+                  fill="#fff"
+                  font-size="18"
+                  font-weight="800"
+                >
+                  CRC는 데이터를 다항식으로 보고 나눗셈의 나머지를 붙이는 느낌
+                </text>
+                <rect
+                  x="32"
+                  y="86"
+                  width="130"
+                  height="78"
+                  rx="16"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text x="97" y="118" fill="#aebbe0" text-anchor="middle">
+                  message bits
+                </text>
+                <text
+                  x="97"
+                  y="144"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  101101...
+                </text>
+                <path d="M178 125h54" stroke="#ffd166" stroke-width="5" />
+                <rect
+                  x="246"
+                  y="72"
+                  width="140"
+                  height="106"
+                  rx="20"
+                  fill="#221d12"
+                  stroke="#ffd166"
+                />
+                <text
+                  x="316"
+                  y="108"
+                  fill="#ffd166"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  mod polynomial
+                </text>
+                <text
+                  x="316"
+                  y="139"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  생성 다항식으로 나눔
+                </text>
+                <path d="M402 125h54" stroke="#ffd166" stroke-width="5" />
+                <rect
+                  x="470"
+                  y="86"
+                  width="105"
+                  height="78"
+                  rx="16"
+                  fill="#2b2718"
+                  stroke="#ffd166"
+                />
+                <text
+                  x="522"
+                  y="118"
+                  fill="#ffd166"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  remainder
+                </text>
+                <text
+                  x="522"
+                  y="144"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  CRC32/64
+                </text>
+                <text
+                  x="310"
+                  y="232"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="15"
+                >
+                  랜덤 충돌 방지보다 특정 오류 패턴 검출에 초점
+                </text>
+              </svg>
+            </div>
+            <div class="box">
+              <h3>동작 직관</h3>
+              <p>
+                데이터 비트열을 다항식처럼 보고, 정해진 생성 다항식으로 나눈
+                나머지를 체크값으로 둔다. 수학적으로 특정 비트 오류 패턴을 잘
+                잡도록 설계된다.
+              </p>
+            </div>
+          </div>
+          <div class="explain">
+            <div class="box">
+              <h3>장점</h3>
+              <ul class="bullets">
+                <li>전송/저장 중 우발적 오류 검출에 강하다.</li>
+                <li>CPU 명령어 또는 하드웨어 가속을 받는 경우가 많다.</li>
+                <li>ZIP, Ethernet, PNG 등 많은 포맷/프로토콜에 쓰인다.</li>
+              </ul>
+            </div>
+            <div class="box">
+              <h3>약점</h3>
+              <ul class="bullets">
+                <li>공격자는 CRC가 맞는 변조 데이터를 만들 수 있다.</li>
+                <li>해시테이블 분산용으로는 일반 해시보다 목적이 다르다.</li>
+              </ul>
+            </div>
+            <div class="scores">
+              <div class="score">
+                <span>오류검출</span>
+                <div class="bar"><span style="width: 92%"></span></div>
+                <b>강함</b>
+              </div>
+              <div class="score">
+                <span>속도</span>
+                <div class="bar"><span style="width: 88%"></span></div>
+                <b>높음</b>
+              </div>
+              <div class="score">
+                <span>보안</span>
+                <div class="bar"><span style="width: 8%"></span></div>
+                <b>없음</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="algo" id="adler">
+        <div class="algo-head">
+          <div class="algo-title">
+            <h2>Adler-32</h2>
+            <span class="tag yellow">가벼운 체크섬</span
+            ><span class="tag">zlib 계열</span>
+          </div>
+          <div class="meta">
+            <span class="tag">빠른 합산</span
+            ><span class="tag">간단 무결성</span
+            ><span class="tag">짧은 입력 주의</span>
+          </div>
+        </div>
+        <div class="algo-body">
+          <div class="explain">
+            <div class="flow">
+              <svg viewBox="0 0 620 285" width="100%" height="100%">
+                <text
+                  x="24"
+                  y="35"
+                  fill="#fff"
+                  font-size="18"
+                  font-weight="800"
+                >
+                  Adler-32는 두 누적합 A, B를 유지한다
+                </text>
+                <rect
+                  x="34"
+                  y="78"
+                  width="92"
+                  height="86"
+                  rx="16"
+                  fill="#172346"
+                  stroke="#2b3a6f"
+                />
+                <text x="80" y="127" fill="#aebbe0" text-anchor="middle">
+                  byte
+                </text>
+                <path d="M142 121h46" stroke="#ffd166" stroke-width="5" />
+                <rect
+                  x="203"
+                  y="66"
+                  width="115"
+                  height="110"
+                  rx="18"
+                  fill="#221d12"
+                  stroke="#ffd166"
+                />
+                <text
+                  x="260"
+                  y="107"
+                  fill="#ffd166"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  A += byte
+                </text>
+                <text
+                  x="260"
+                  y="138"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  mod 65521
+                </text>
+                <path d="M333 121h46" stroke="#ffd166" stroke-width="5" />
+                <rect
+                  x="394"
+                  y="66"
+                  width="115"
+                  height="110"
+                  rx="18"
+                  fill="#221d12"
+                  stroke="#ffd166"
+                />
+                <text
+                  x="451"
+                  y="107"
+                  fill="#ffd166"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  B += A
+                </text>
+                <text
+                  x="451"
+                  y="138"
+                  fill="#aebbe0"
+                  text-anchor="middle"
+                  font-size="13"
+                >
+                  mod 65521
+                </text>
+                <path d="M510 121h38" stroke="#9cff8b" stroke-width="5" />
+                <rect
+                  x="558"
+                  y="82"
+                  width="42"
+                  height="78"
+                  rx="14"
+                  fill="#172b2a"
+                  stroke="#9cff8b"
+                />
+                <text
+                  x="579"
+                  y="126"
+                  fill="#9cff8b"
+                  text-anchor="middle"
+                  font-weight="900"
+                >
+                  B|A
+                </text>
+              </svg>
+            </div>
+            <div class="mini-code">
+              A = 1, B = 0 for each byte x: A = (A + x) mod 65521 B = (B + A)
+              mod 65521 checksum = (B << 16) | A
+            </div>
+          </div>
+          <div class="explain">
+            <div class="box">
+              <h3>장점</h3>
+              <ul class="bullets">
+                <li>구현이 단순하고 빠르다.</li>
+                <li>압축/스트리밍 데이터에서 가벼운 체크섬으로 쓰기 좋다.</li>
+              </ul>
+            </div>
+            <div class="box">
+              <h3>약점</h3>
+              <ul class="bullets">
+                <li>CRC32보다 오류 검출력이 약한 경우가 있다.</li>
+                <li>짧은 메시지에서는 특히 분산/검출 품질이 약할 수 있다.</li>
+                <li>중복 탐지의 유일한 근거로 쓰기엔 출력이 작다.</li>
+              </ul>
+            </div>
+            <div class="scores">
+              <div class="score">
+                <span>속도</span>
+                <div class="bar"><span style="width: 80%"></span></div>
+                <b>높음</b>
+              </div>
+              <div class="score">
+                <span>검출력</span>
+                <div class="bar"><span style="width: 62%"></span></div>
+                <b>보통</b>
+              </div>
+              <div class="score">
+                <span>단순성</span>
+                <div class="bar"><span style="width: 95%"></span></div>
+                <b>최상</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <section class="card wide" id="choose">
+        <h2>상황별 선택 가이드</h2>
+        <table>
+          <tr>
+            <th>상황</th>
+            <th>우선 후보</th>
+            <th>이유</th>
+            <th>주의</th>
+          </tr>
+          <tr>
+            <td>새 프로젝트의 빠른 비보안 fingerprint</td>
+            <td>XXH3 64/128</td>
+            <td>속도와 품질이 좋고 현대적이다.</td>
+            <td>보안 무결성 증명에는 쓰지 않는다.</td>
+          </tr>
+          <tr>
+            <td>해시테이블, Bloom filter, 샤딩</td>
+            <td>MurmurHash3, xxHash</td>
+            <td>분산 품질과 생태계가 좋다.</td>
+            <td>seed와 구현 버전을 고정한다.</td>
+          </tr>
+          <tr>
+            <td>문자열 키가 많은 기존 Google 계열 시스템</td>
+            <td>CityHash, FarmHash</td>
+            <td>문자열 처리에 최적화된 계열이다.</td>
+            <td>플랫폼 간 결과 안정성을 확인한다.</td>
+          </tr>
+          <tr>
+            <td>네트워크/파일 포맷 오류 검출</td>
+            <td>CRC32, CRC64</td>
+            <td>오류 검출이라는 목적에 맞다.</td>
+            <td>악의적 변조 방지는 못 한다.</td>
+          </tr>
+          <tr>
+            <td>매우 간단한 의존성 없는 구현</td>
+            <td>FNV-1a, Adler-32</td>
+            <td>직접 구현이 쉽다.</td>
+            <td>대규모 중복 판정에는 부적합할 수 있다.</td>
+          </tr>
+          <tr>
+            <td>보안 무결성, 서명</td>
+            <td>SHA-256, BLAKE3, HMAC</td>
+            <td>비암호학적 해시의 영역이 아니다.</td>
+            <td>xxHash, CRC, Adler는 쓰지 않는다.</td>
+          </tr>
+          <tr>
+            <td>패스워드 저장</td>
+            <td>Argon2id, scrypt, bcrypt, PBKDF2</td>
+            <td>비밀번호 추측을 느리게 만드는 전용 KDF를 쓴다.</td>
+            <td>xxHash, CRC, Adler, SHA-256은 쓰지 않는다.</td>
+          </tr>
+        </table>
+        <div class="note warn" style="margin-top: 16px">
+          <p>
+            <strong>중복 탐지 팁:</strong> 해시값이 같다고 바로 동일 파일로
+            확정하지 말고, 파일 크기 → 빠른 해시 → 필요 시 원본 바이트 비교
+            순서로 검증하면 안전하다.
+          </p>
+        </div>
+      </section>
+
+      <footer>
+        <p>
+          근거로 본 공개 자료: Wikipedia “List of hash functions”, NIST CSRC
+          Hash Functions, BLAKE3 공식 GitHub, xxHash 공식 GitHub, OWASP Password
+          Storage Cheat Sheet.
+        </p>
+        <p>
+          이 문서는 비암호학적 해시의 실무 선택을 돕기 위한 학습용 자료다. 보안
+          경계에서는 반드시 암호학적 해시/MAC/비밀번호 해싱 알고리즘을 별도로
+          선택해야 한다.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,2510 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="2017년 Discord의 안정 해시 조회 병목과 FastGlobal 해결을 초등학생도 이해할 수 있는 그림과 비유로 설명합니다."
+    />
+    <meta name="color-scheme" content="light" />
+    <title>좋은 지도도 읽는 길이 막히면 느려져요 | Discord 안정 해시 이야기</title>
+    <style>
+      :root {
+        --surface-canvas: #f8f4ec;
+        --surface-card: #fffdf8;
+        --surface-soft: #f1ebdd;
+        --text-primary: #172033;
+        --text-secondary: #4e5969;
+        --border-oat: #d8cdba;
+        --accent-hot: #c84e2f;
+        --accent-hot-soft: #fbe7de;
+        --accent-shared: #244c86;
+        --accent-shared-soft: #e6f0fc;
+        --fact: #356b4a;
+        --fact-soft: #e7f1e9;
+        --caution: #805b13;
+        --caution-soft: #fff2ce;
+        --focus-ring: #0b5fff;
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-5: 20px;
+        --space-6: 24px;
+        --space-8: 32px;
+        --space-10: 40px;
+        --space-12: 48px;
+        --space-16: 64px;
+        --space-20: 80px;
+        --radius-button: 6px;
+        --radius-card: 12px;
+        --radius-diagram: 16px;
+        --content-width: 1120px;
+        --reading-width: 760px;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        background: var(--surface-canvas);
+      }
+
+      body {
+        margin: 0;
+        min-width: 0;
+        background: var(--surface-canvas);
+        color: var(--text-primary);
+        font-family:
+          system-ui, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+          "Noto Sans KR", sans-serif;
+        font-size: 1rem;
+        line-height: 1.75;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+      }
+
+      a {
+        color: var(--accent-shared);
+        text-underline-offset: 0.2em;
+      }
+
+      a:hover {
+        text-decoration-thickness: 0.14em;
+      }
+
+      a:focus-visible,
+      button:focus-visible {
+        outline: 3px solid var(--focus-ring);
+        outline-offset: 3px;
+      }
+
+      button {
+        min-height: 44px;
+        font: inherit;
+      }
+
+      .skip-link {
+        position: fixed;
+        z-index: 20;
+        top: var(--space-3);
+        left: var(--space-3);
+        padding: var(--space-2) var(--space-4);
+        border: 1px solid var(--focus-ring);
+        border-radius: var(--radius-button);
+        background: var(--surface-card);
+        color: var(--text-primary);
+        transform: translateY(-160%);
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .page-nav {
+        border-bottom: 1px solid var(--border-oat);
+        background: var(--surface-card);
+      }
+
+      .page-nav__inner {
+        width: min(100% - 32px, var(--content-width));
+        margin-inline: auto;
+        padding-block: var(--space-3);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
+      }
+
+      .page-nav__brand {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--text-primary);
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .page-nav__mark {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        border: 2px solid var(--accent-shared);
+        border-radius: 50%;
+        place-items: center;
+        color: var(--accent-shared);
+        font-size: 0.75rem;
+        white-space: nowrap;
+      }
+
+      .page-nav__links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--space-2) var(--space-4);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .page-nav__links a {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .page-nav__links a:hover {
+        color: var(--accent-shared);
+      }
+
+      .hero {
+        border-bottom: 1px solid var(--border-oat);
+        background: var(--surface-soft);
+      }
+
+      .hero__inner {
+        width: min(100% - 32px, var(--content-width));
+        margin-inline: auto;
+        padding-block: var(--space-16);
+        display: grid;
+        grid-template-columns: minmax(0, 7fr) minmax(260px, 5fr);
+        gap: var(--space-10);
+        align-items: center;
+      }
+
+      .eyebrow,
+      .chapter-number {
+        margin: 0 0 var(--space-3);
+        color: var(--accent-shared);
+        font-size: 0.875rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        text-wrap: balance;
+        word-break: keep-all;
+      }
+
+      h1 {
+        max-width: 12ch;
+        font-size: clamp(2.25rem, 6vw, 4.5rem);
+        line-height: 1.12;
+        letter-spacing: -0.045em;
+      }
+
+      h2 {
+        font-size: clamp(1.75rem, 4vw, 2.75rem);
+        line-height: 1.2;
+        letter-spacing: -0.03em;
+      }
+
+      h3 {
+        font-size: clamp(1.25rem, 2.6vw, 1.75rem);
+        font-weight: 750;
+        line-height: 1.3;
+        letter-spacing: -0.02em;
+      }
+
+      .nowrap {
+        white-space: nowrap;
+      }
+
+      .hero__lead {
+        max-width: 34rem;
+        margin: var(--space-6) 0 0;
+        color: var(--text-secondary);
+        font-size: clamp(1.0625rem, 2vw, 1.25rem);
+        line-height: 1.7;
+      }
+
+      .hero__takeaway {
+        margin: var(--space-6) 0 0;
+        padding-left: var(--space-4);
+        border-left: 4px solid var(--accent-hot);
+        font-weight: 800;
+      }
+
+      .learning-map {
+        padding: var(--space-6);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-diagram);
+        background: var(--surface-card);
+      }
+
+      .learning-map h2 {
+        font-size: 1.25rem;
+      }
+
+      .learning-map ol {
+        display: grid;
+        gap: var(--space-3);
+        margin: var(--space-5) 0 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: map-step;
+      }
+
+      .learning-map li {
+        display: grid;
+        grid-template-columns: 32px minmax(0, 1fr);
+        gap: var(--space-3);
+        align-items: start;
+        counter-increment: map-step;
+      }
+
+      .learning-map li::before {
+        display: grid;
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--accent-shared);
+        border-radius: 50%;
+        place-items: center;
+        color: var(--accent-shared);
+        content: counter(map-step);
+        font-size: 0.875rem;
+        font-weight: 800;
+      }
+
+      main {
+        width: min(100% - 32px, var(--content-width));
+        margin-inline: auto;
+        padding-block: var(--space-12) var(--space-20);
+      }
+
+      main > article {
+        display: grid;
+        gap: var(--space-12);
+      }
+
+      .lesson-section {
+        scroll-margin-top: var(--space-6);
+      }
+
+      .section-card {
+        padding: clamp(20px, 4vw, 40px);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-card);
+        background: var(--surface-card);
+      }
+
+      .section-intro {
+        max-width: var(--reading-width);
+        margin: var(--space-4) 0 0;
+        color: var(--text-secondary);
+        font-size: 1.0625rem;
+      }
+
+      .label-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        margin-bottom: var(--space-4);
+      }
+
+      .evidence-label {
+        display: inline-flex;
+        min-height: 32px;
+        align-items: center;
+        padding: var(--space-1) var(--space-3);
+        border: 1px solid currentColor;
+        border-radius: 999px;
+        font-size: 0.8125rem;
+        font-weight: 800;
+      }
+
+      .evidence-label--analogy {
+        background: var(--surface-soft);
+        color: var(--text-primary);
+      }
+
+      .evidence-label--fact {
+        background: var(--fact-soft);
+        color: var(--fact);
+      }
+
+      .evidence-label--calc {
+        background: var(--accent-shared-soft);
+        color: var(--accent-shared);
+      }
+
+      .evidence-label--caution {
+        background: var(--caution-soft);
+        color: var(--caution);
+      }
+
+      .note {
+        margin-top: var(--space-6);
+        padding: var(--space-4);
+        border: 1px solid var(--border-oat);
+        border-left-width: 4px;
+        border-radius: var(--radius-button);
+      }
+
+      .note--caution {
+        border-left-color: var(--caution);
+        background: var(--caution-soft);
+      }
+
+      .note--fact {
+        border-left-color: var(--fact);
+        background: var(--fact-soft);
+      }
+
+      .note strong {
+        display: block;
+        margin-bottom: var(--space-1);
+      }
+
+      .step-flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: var(--space-3);
+        margin: var(--space-8) 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .step-flow li {
+        position: relative;
+        min-height: 144px;
+        padding: var(--space-4);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-card);
+        background: var(--surface-soft);
+      }
+
+      .step-flow li:not(:last-child)::after {
+        position: absolute;
+        top: 50%;
+        right: -13px;
+        z-index: 1;
+        width: 24px;
+        height: 24px;
+        border: 1px solid var(--border-oat);
+        border-radius: 50%;
+        background: var(--surface-card);
+        color: var(--accent-shared);
+        content: "→";
+        line-height: 22px;
+        text-align: center;
+      }
+
+      .step-flow__number {
+        display: block;
+        color: var(--accent-shared);
+        font-size: 0.8125rem;
+        font-weight: 800;
+      }
+
+      .step-flow strong {
+        display: block;
+        margin-top: var(--space-2);
+        line-height: 1.4;
+      }
+
+      figure {
+        margin: var(--space-8) 0 0;
+        padding: var(--space-4);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-diagram);
+        background: var(--surface-soft);
+      }
+
+      figure svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: var(--radius-card);
+        background: var(--surface-card);
+      }
+
+      .diagram-mobile {
+        display: none;
+      }
+
+      figcaption {
+        max-width: var(--reading-width);
+        margin: var(--space-4) auto 0;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        text-align: center;
+      }
+
+      .svg-ring {
+        fill: none;
+        stroke: var(--accent-shared);
+        stroke-width: 8;
+      }
+
+      .svg-route {
+        fill: none;
+        stroke: var(--accent-hot);
+        stroke-dasharray: 12 10;
+        stroke-linecap: round;
+        stroke-width: 6;
+      }
+
+      .svg-node {
+        fill: var(--accent-shared-soft);
+        stroke: var(--accent-shared);
+        stroke-width: 4;
+      }
+
+      .svg-key {
+        fill: var(--accent-hot-soft);
+        stroke: var(--accent-hot);
+        stroke-width: 4;
+      }
+
+      .svg-card {
+        fill: var(--surface-card);
+        stroke: var(--border-oat);
+        stroke-width: 3;
+      }
+
+      .svg-hot {
+        fill: var(--accent-hot-soft);
+        stroke: var(--accent-hot);
+        stroke-width: 3;
+      }
+
+      .svg-shared {
+        fill: var(--accent-shared-soft);
+        stroke: var(--accent-shared);
+        stroke-width: 3;
+      }
+
+      .svg-fact {
+        fill: var(--fact-soft);
+        stroke: var(--fact);
+        stroke-width: 3;
+      }
+
+      .svg-arrow-hot,
+      .svg-arrow-shared {
+        fill: none;
+        stroke-linecap: round;
+        stroke-width: 5;
+      }
+
+      .svg-arrow-hot {
+        stroke: var(--accent-hot);
+      }
+
+      .svg-arrow-shared {
+        stroke: var(--fact);
+      }
+
+      .svg-text {
+        fill: var(--text-primary);
+        font-family:
+          system-ui, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+          sans-serif;
+      }
+
+      .svg-text--muted {
+        fill: var(--text-secondary);
+      }
+
+      .svg-text--hot {
+        fill: var(--accent-hot);
+      }
+
+      .svg-text--shared {
+        fill: var(--accent-shared);
+      }
+
+      .svg-text--fact {
+        fill: var(--fact);
+      }
+
+      .calculation {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-4);
+        margin-top: var(--space-8);
+      }
+
+      .calculation__item {
+        padding: var(--space-5);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-card);
+        background: var(--surface-soft);
+      }
+
+      .calculation__item strong {
+        display: block;
+        font-size: 1.5rem;
+        line-height: 1.2;
+      }
+
+      .calculation__item span {
+        display: block;
+        margin-top: var(--space-2);
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+      }
+
+      .calculation__formula {
+        grid-column: 1 / -1;
+        margin: 0;
+        padding: var(--space-5);
+        border: 1px solid var(--accent-shared);
+        border-radius: var(--radius-card);
+        background: var(--accent-shared-soft);
+        color: var(--accent-shared);
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        font-size: clamp(1rem, 2vw, 1.25rem);
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .stage-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-4);
+        margin-top: var(--space-8);
+      }
+
+      .stage-card {
+        padding: var(--space-5);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-card);
+      }
+
+      .stage-card--hot {
+        background: var(--accent-hot-soft);
+      }
+
+      .stage-card--middle {
+        background: var(--caution-soft);
+      }
+
+      .stage-card--shared {
+        background: var(--fact-soft);
+      }
+
+      .stage-card__index {
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+        font-weight: 800;
+      }
+
+      .stage-card h3 {
+        margin-top: var(--space-2);
+      }
+
+      .stage-card p {
+        margin: var(--space-3) 0 0;
+      }
+
+      .stage-card__metric {
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--border-oat);
+        color: var(--text-primary);
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        font-weight: 800;
+      }
+
+      .before-after {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-4);
+        margin-top: var(--space-8);
+      }
+
+      .comparison-card {
+        padding: var(--space-6);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-card);
+      }
+
+      .comparison-card--before {
+        background: var(--accent-hot-soft);
+      }
+
+      .comparison-card--after {
+        background: var(--fact-soft);
+      }
+
+      .comparison-card ul {
+        display: grid;
+        gap: var(--space-3);
+        margin: var(--space-5) 0 0;
+        padding-left: var(--space-5);
+      }
+
+      .check-table {
+        width: 100%;
+        margin-top: var(--space-8);
+        border-collapse: collapse;
+      }
+
+      .check-table th,
+      .check-table td {
+        padding: var(--space-3);
+        border-top: 1px solid var(--border-oat);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .check-table th {
+        background: var(--surface-soft);
+        font-size: 0.875rem;
+      }
+
+      .disclosure-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+        margin-top: var(--space-6);
+        padding: var(--space-3) var(--space-5);
+        border: 1px solid var(--accent-shared);
+        border-radius: var(--radius-button);
+        background: var(--surface-card);
+        color: var(--accent-shared);
+        cursor: pointer;
+        font-weight: 800;
+      }
+
+      .disclosure-button:hover {
+        background: var(--accent-shared-soft);
+      }
+
+      .disclosure-button::after {
+        content: "＋";
+        font-size: 1.25rem;
+        line-height: 1;
+      }
+
+      .disclosure-button[aria-expanded="true"]::after {
+        content: "−";
+      }
+
+      .real-system-panel {
+        margin-top: var(--space-4);
+        padding: var(--space-5);
+        border: 1px solid var(--accent-shared);
+        border-radius: var(--radius-card);
+        background: var(--accent-shared-soft);
+      }
+
+      .real-system-panel[hidden] {
+        display: none;
+      }
+
+      .code-path {
+        margin: var(--space-4) 0 0;
+        padding: var(--space-4);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-button);
+        background: var(--surface-card);
+        font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+        line-height: 1.7;
+        overflow-wrap: anywhere;
+      }
+
+      .ets-explainer {
+        margin-top: var(--space-6);
+        padding: var(--space-5);
+        border: 1px solid var(--accent-shared);
+        border-radius: var(--radius-card);
+        background: var(--accent-shared-soft);
+      }
+
+      .ets-explainer h3 {
+        margin: 0;
+      }
+
+      .ets-explainer > p {
+        margin: var(--space-2) 0 0;
+        color: var(--text-secondary);
+      }
+
+      .ets-flow {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.1fr) auto minmax(0, 1fr);
+        align-items: stretch;
+        gap: var(--space-2);
+        margin-top: var(--space-5);
+      }
+
+      .ets-flow__box {
+        padding: var(--space-4);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-button);
+        background: var(--surface-card);
+      }
+
+      .ets-flow__box strong,
+      .ets-flow__arrow strong {
+        display: block;
+        color: var(--text-primary);
+      }
+
+      .ets-flow__box span {
+        display: block;
+        margin-top: var(--space-1);
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+      }
+
+      .ets-flow__box--table {
+        border-color: var(--accent-shared);
+        background: var(--surface-soft);
+      }
+
+      .ets-flow__box--copy {
+        border-color: var(--accent-hot);
+        background: var(--accent-hot-soft);
+      }
+
+      .ets-flow__arrow {
+        display: grid;
+        place-content: center;
+        min-width: 86px;
+        color: var(--accent-shared);
+        font-size: 0.8125rem;
+        text-align: center;
+      }
+
+      .ets-flow__arrow::before {
+        content: "→";
+        display: block;
+        margin-bottom: var(--space-1);
+        font-size: 1.75rem;
+        line-height: 1;
+      }
+
+      .ets-flow__arrow--copy {
+        color: var(--accent-hot);
+      }
+
+      .glossary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-3);
+        margin: var(--space-8) 0 0;
+      }
+
+      .term {
+        padding: var(--space-4);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-card);
+        background: var(--surface-soft);
+      }
+
+      .term dt {
+        color: var(--accent-shared);
+        font-weight: 800;
+      }
+
+      .term dd {
+        margin: var(--space-1) 0 0;
+        color: var(--text-secondary);
+      }
+
+      .quiz-list {
+        display: grid;
+        gap: var(--space-5);
+        margin-top: var(--space-8);
+      }
+
+      .quiz-question {
+        padding: var(--space-5);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-card);
+        background: var(--surface-soft);
+      }
+
+      .quiz-question h3 {
+        font-size: 1.125rem;
+      }
+
+      .quiz-options {
+        display: grid;
+        gap: var(--space-2);
+        margin-top: var(--space-4);
+      }
+
+      .quiz-option {
+        width: 100%;
+        padding: var(--space-3) var(--space-4);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-button);
+        background: var(--surface-card);
+        color: var(--text-primary);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .quiz-option:hover:not(:disabled) {
+        border-color: var(--accent-shared);
+        background: var(--accent-shared-soft);
+      }
+
+      .quiz-option:disabled {
+        cursor: default;
+        opacity: 0.72;
+      }
+
+      .quiz-option[data-state="correct"] {
+        border-color: var(--fact);
+        background: var(--fact-soft);
+        color: var(--fact);
+        opacity: 1;
+        font-weight: 800;
+      }
+
+      .quiz-option[data-state="wrong"] {
+        border-color: var(--accent-hot);
+        background: var(--accent-hot-soft);
+        color: var(--accent-hot);
+        opacity: 1;
+      }
+
+      .question-feedback {
+        min-height: 28px;
+        margin: var(--space-3) 0 0;
+        color: var(--text-secondary);
+        font-weight: 700;
+      }
+
+      #quiz-feedback {
+        min-height: 56px;
+        margin: var(--space-5) 0 0;
+        padding: var(--space-4);
+        border: 1px solid var(--accent-shared);
+        border-radius: var(--radius-card);
+        background: var(--accent-shared-soft);
+        color: var(--accent-shared);
+        font-weight: 800;
+      }
+
+      .source-card {
+        display: grid;
+        gap: var(--space-4);
+        margin-top: var(--space-6);
+        padding: var(--space-5);
+        border: 1px solid var(--border-oat);
+        border-radius: var(--radius-card);
+        background: var(--surface-soft);
+      }
+
+      .source-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2) var(--space-4);
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+      }
+
+      .source-card a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        width: fit-content;
+        max-width: 100%;
+        padding-inline: var(--space-1);
+        overflow-wrap: anywhere;
+        font-weight: 800;
+      }
+
+      footer {
+        border-top: 1px solid var(--border-oat);
+        background: var(--accent-shared);
+        color: var(--surface-card);
+      }
+
+      .footer-inner {
+        width: min(100% - 32px, var(--content-width));
+        margin-inline: auto;
+        padding-block: var(--space-6);
+      }
+
+      .footer-inner p {
+        margin: 0;
+      }
+
+      @media (max-width: 60rem) {
+        .hero__inner {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          max-width: 16ch;
+        }
+
+        .step-flow {
+          grid-template-columns: 1fr;
+        }
+
+        .step-flow li {
+          min-height: 0;
+        }
+
+        .step-flow li:not(:last-child)::after {
+          top: auto;
+          right: 50%;
+          bottom: -18px;
+          transform: translateX(50%) rotate(90deg);
+        }
+      }
+
+      @media (max-width: 48rem) {
+        .page-nav__inner {
+          width: min(100% - 48px, var(--content-width));
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .page-nav__links {
+          width: 100%;
+          justify-content: flex-start;
+        }
+
+        .hero__inner,
+        main,
+        .footer-inner {
+          width: min(100% - 48px, var(--content-width));
+        }
+
+        .calculation,
+        .stage-grid,
+        .before-after,
+        .glossary-grid,
+        .ets-flow {
+          grid-template-columns: 1fr;
+        }
+
+        .ets-flow__arrow {
+          min-height: 54px;
+        }
+
+        .ets-flow__arrow::before {
+          transform: rotate(90deg);
+        }
+
+        .check-table {
+          display: block;
+          overflow-x: auto;
+        }
+
+        .check-table th:first-child {
+          min-width: 6.25rem;
+          word-break: keep-all;
+        }
+      }
+
+      @media (max-width: 30rem) {
+        .page-nav__inner,
+        .hero__inner,
+        main,
+        .footer-inner {
+          width: min(100% - 32px, var(--content-width));
+        }
+
+        .hero__inner {
+          padding-block: var(--space-10);
+        }
+
+        .section-card {
+          padding: var(--space-5);
+        }
+
+        figure {
+          padding: var(--space-2);
+        }
+
+        .diagram-wide {
+          display: none;
+        }
+
+        .diagram-mobile {
+          display: block;
+        }
+
+        .page-nav__links {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .page-nav__links a {
+          min-width: 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+
+      @media print {
+        .page-nav,
+        .skip-link,
+        .disclosure-button,
+        .quiz-options {
+          display: none;
+        }
+
+        .real-system-panel[hidden] {
+          display: block;
+        }
+
+        body {
+          background: var(--surface-card);
+        }
+
+        .section-card,
+        figure {
+          break-inside: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#lesson">본문으로 바로 가기</a>
+
+    <nav class="page-nav" aria-label="학습 목차">
+      <div class="page-nav__inner">
+        <a class="page-nav__brand" href="#top">
+          <span class="page-nav__mark" aria-hidden="true">CH5</span>
+          안정 해시 현장 학습
+        </a>
+        <ul class="page-nav__links">
+          <li><a href="#ring">길찾기 규칙</a></li>
+          <li><a href="#bottleneck">막힌 길</a></li>
+          <li><a href="#fastglobal">읽는 길 바꾸기</a></li>
+          <li><a href="#quiz">확인 문제</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <header class="hero" id="top">
+      <div class="hero__inner">
+        <div>
+          <p class="eyebrow">2017년 Discord Engineering 사례</p>
+          <h1>좋은 지도도 읽는 길이 막히면 느려져요</h1>
+          <p class="hero__lead">
+            안정 해시는 “어디로 갈까?”를 정하는 길찾기 규칙이에요.
+            <span class="nowrap">그런데 Discord에서는</span> 규칙보다도
+            <strong class="nowrap">그 지도를 읽는 길</strong>이
+            막혀 <span class="nowrap">큰 기다림이 생겼습니다.</span>
+          </p>
+          <p class="hero__takeaway">
+            오늘의 한 줄: 문제는 링의 모양만이 아니라,
+            <span class="nowrap">누가 얼마나</span> 빨리 링을 읽을 수
+            있느냐였어요.
+          </p>
+          <p class="hero__takeaway">
+            읽는 방법: 먼저 학교 비유로 감을 잡고, 각 장 아래의 실제 요청 경로와
+            VM 동작으로 한 단계 더 깊게 들어갑니다.
+          </p>
+        </div>
+
+        <aside class="learning-map" aria-labelledby="learning-map-title">
+          <h2 id="learning-map-title">오늘의 학습 지도</h2>
+          <ol>
+            <li><span><strong>규칙</strong><br />안정 해시 링 읽기</span></li>
+            <li><span><strong>문제</strong><br />한 안내 데스크의 긴 줄</span></li>
+            <li><span><strong>시도</strong><br />ETS의 큰 지도 복사</span></li>
+            <li><span><strong>해결</strong><br />FastGlobal 공유 읽기</span></li>
+            <li><span><strong>교훈</strong><br />다음 줄은 입장표로 보호</span></li>
+          </ol>
+        </aside>
+      </div>
+    </header>
+
+    <main id="lesson">
+      <article aria-label="Discord 안정 해시 학습 내용">
+        <section class="lesson-section section-card" aria-labelledby="scope-title">
+          <div class="label-row">
+            <span class="evidence-label evidence-label--caution">주의</span>
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+          </div>
+          <p class="chapter-number">먼저 범위를 확인해요</p>
+          <h2 id="scope-title">이것은 2017년 당시의 이야기예요</h2>
+          <p class="section-intro">
+            이 페이지는 Discord가 2017년에 공개한 엔지니어링 글의 한 사례를
+            쉽게 풀어쓴 학습 자료입니다. 글 제목에는 500만 동시 사용자가
+            나오지만, 본문은 “거의 500만 명”이라는 규모를 설명합니다.
+            쉬운 비유만으로 끝내지 않고, 비유가 실제 process·mailbox·heap·queue에서
+            무엇을 뜻하는지도 함께 설명합니다.
+          </p>
+          <div class="note note--caution">
+            <strong>현재 상태로 오해하지 않기</strong>
+            이 글은 현재 Discord 아키텍처를 설명하는 자료가 아닙니다. 아래
+            시간도 2017년 당시 ring lookup 경로를 비교한 계산값이지, 전체
+            재접속 완료 시간이나 오늘의 Discord 성능이 아닙니다.
+          </div>
+        </section>
+
+        <section class="lesson-section section-card" id="ring" aria-labelledby="ring-title">
+          <div class="label-row">
+            <span class="evidence-label evidence-label--analogy">비유</span>
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+          </div>
+          <p class="chapter-number">1. 길찾기 규칙</p>
+          <h2 id="ring-title">안정 해시 링은 둥근 노선도예요</h2>
+          <p class="section-intro">
+            일반적인 안정 해시에서는 guild 같은 대상을 나타내는 key와
+            <span class="nowrap">Erlang node</span>를 같은 둥근 링에
+            놓습니다. key에서 정해진 방향으로 걸어가 가장 먼저 만나는 node가
+            담당 위치가 됩니다.
+          </p>
+
+          <figure id="ring-diagram" aria-labelledby="ring-figure-caption">
+            <svg
+              class="diagram-wide"
+              viewBox="0 0 760 440"
+              role="img"
+              aria-labelledby="ring-svg-title ring-svg-desc"
+            >
+              <title id="ring-svg-title">guild key가 담당 Erlang node를 찾는 안정 해시 링</title>
+              <desc id="ring-svg-desc">
+                둥근 링 위에 세 개의 Erlang node와 하나의 guild key가 있고,
+                guild key에서 시계 방향으로 이동해 처음 만나는 node B를 찾는다.
+              </desc>
+              <circle class="svg-ring" cx="380" cy="220" r="148" />
+              <path
+                class="svg-route"
+                d="M 242 272 C 208 178, 267 80, 376 72"
+              />
+              <path
+                class="svg-route"
+                d="M 376 72 L 354 62 M 376 72 L 365 94"
+              />
+
+              <circle class="svg-node" cx="380" cy="72" r="42" />
+              <text class="svg-text svg-text--shared" x="380" y="67" text-anchor="middle" font-size="18" font-weight="800">
+                node B
+              </text>
+              <text class="svg-text svg-text--muted" x="380" y="89" text-anchor="middle" font-size="13">
+                첫 만남
+              </text>
+
+              <circle class="svg-node" cx="516" cy="278" r="42" />
+              <text class="svg-text svg-text--shared" x="516" y="283" text-anchor="middle" font-size="18" font-weight="800">
+                node C
+              </text>
+
+              <circle class="svg-node" cx="244" cy="278" r="42" />
+              <text class="svg-text svg-text--shared" x="244" y="283" text-anchor="middle" font-size="18" font-weight="800">
+                node A
+              </text>
+
+              <rect class="svg-key" x="176" y="318" width="136" height="64" rx="12" />
+              <text class="svg-text svg-text--hot" x="244" y="344" text-anchor="middle" font-size="17" font-weight="800">
+                guild key
+              </text>
+              <text class="svg-text svg-text--muted" x="244" y="366" text-anchor="middle" font-size="13">
+                여기서 출발
+              </text>
+
+              <text class="svg-text" x="380" y="216" text-anchor="middle" font-size="22" font-weight="800">
+                시계 방향으로
+              </text>
+              <text class="svg-text svg-text--muted" x="380" y="244" text-anchor="middle" font-size="17">
+                첫 node 찾기
+              </text>
+            </svg>
+            <svg
+              class="diagram-mobile"
+              viewBox="0 0 320 400"
+              role="img"
+              aria-labelledby="ring-mobile-title ring-mobile-desc"
+            >
+              <title id="ring-mobile-title">모바일용 안정 해시 링</title>
+              <desc id="ring-mobile-desc">
+                guild key에서 시계 방향으로 이동해 첫 번째 Erlang node인 node B를 찾는다.
+              </desc>
+              <circle class="svg-ring" cx="160" cy="170" r="105" />
+              <path class="svg-route" d="M 75 232 C 35 150, 82 75, 156 65" />
+              <path class="svg-route" d="M 156 65 L 140 58 M 156 65 L 147 81" />
+
+              <circle class="svg-node" cx="160" cy="65" r="34" />
+              <text class="svg-text svg-text--shared" x="160" y="62" text-anchor="middle" font-size="15" font-weight="800">node B</text>
+              <text class="svg-text svg-text--muted" x="160" y="80" text-anchor="middle" font-size="14">첫 만남</text>
+
+              <circle class="svg-node" cx="250" cy="220" r="34" />
+              <text class="svg-text svg-text--shared" x="250" y="225" text-anchor="middle" font-size="15" font-weight="800">node C</text>
+
+              <circle class="svg-node" cx="70" cy="220" r="34" />
+              <text class="svg-text svg-text--shared" x="70" y="225" text-anchor="middle" font-size="15" font-weight="800">node A</text>
+
+              <rect class="svg-key" x="24" y="305" width="132" height="64" rx="12" />
+              <text class="svg-text svg-text--hot" x="90" y="332" text-anchor="middle" font-size="16" font-weight="800">guild key</text>
+              <text class="svg-text svg-text--muted" x="90" y="352" text-anchor="middle" font-size="14">여기서 출발</text>
+
+              <text class="svg-text" x="160" y="164" text-anchor="middle" font-size="18" font-weight="800">시계 방향</text>
+              <text class="svg-text svg-text--muted" x="160" y="188" text-anchor="middle" font-size="14">첫 node 찾기</text>
+            </svg>
+            <figcaption id="ring-figure-caption">
+              학교 노선도에서 내 교실의 건물을 찾듯, key에서 정해진 방향으로
+              이동해 첫 node를 찾습니다.
+            </figcaption>
+          </figure>
+
+          <h3>왜 이름이 “안정” 해시일까요?</h3>
+          <p>
+            일반적인 나머지 연산 방식에서는 서버 수가 바뀌면 많은 key의 계산 결과가
+            한꺼번에 달라질 수 있습니다. 안정 해시 링에서는 node 하나가 추가되거나
+            빠져도 그 node와 이웃한 링 구간의 key만 주로 새 담당자를 찾습니다. 전체
+            key를 다시 배치하는 일을 줄이는 것이 “안정”의 핵심입니다.
+          </p>
+          <table class="check-table">
+            <thead>
+              <tr>
+                <th scope="col">변화</th>
+                <th scope="col">링에서 일어나는 일</th>
+                <th scope="col">영향받는 key</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">node 추가</th>
+                <td>새 node가 자신의 앞쪽 링 구간 일부를 맡음</td>
+                <td>그 작은 구간에 있던 key만 새 node로 이동</td>
+              </tr>
+              <tr>
+                <th scope="row">node 제거</th>
+                <td>빠진 node의 구간을 다음 node가 이어받음</td>
+                <td>빠진 node가 맡던 key만 주로 이동</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="note note--caution">
+            <strong>일반 원리와 Discord 원문 범위 구분</strong>
+            위 최소 재배치 설명은 안정 해시의 일반 원리입니다. Discord 공식 글은
+            node 추가·삭제 실험보다, 이미 사용 중인 ring을 매우 자주 조회할 때 생긴
+            hot path 병목과 읽기 경로 개선에 초점을 둡니다.
+          </div>
+
+          <ol class="step-flow" aria-label="Discord 연결 흐름 다섯 단계">
+            <li>
+              <span class="step-flow__number">STEP 1</span>
+              <strong>WebSocket으로 접속</strong>
+            </li>
+            <li>
+              <span class="step-flow__number">STEP 2</span>
+              <strong>session process 생성</strong>
+            </li>
+            <li>
+              <span class="step-flow__number">STEP 3</span>
+              <strong>guild 목록 확인</strong>
+            </li>
+            <li>
+              <span class="step-flow__number">STEP 4</span>
+              <strong>remote Erlang node 조회</strong>
+            </li>
+            <li>
+              <span class="step-flow__number">STEP 5</span>
+              <strong>guild process와 통신</strong>
+            </li>
+          </ol>
+
+          <div class="note note--fact">
+            <strong>node 찾기와 PID 찾기는 달라요</strong>
+            ring이 먼저 찾은 것은 entity의 remote Erlang node입니다. 그 뒤
+            실제 guild process의 PID를 찾는 일은 별도 단계입니다. 둘을 한
+            번의 lookup으로 합쳐 생각하지 않습니다.
+          </div>
+
+          <h3>실제 시스템에서는 누가 무엇을 맡았을까요?</h3>
+          <table class="check-table">
+            <thead>
+              <tr>
+                <th scope="col">구성 요소</th>
+                <th scope="col">맡은 일</th>
+                <th scope="col">서로 주고받는 것</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">session GenServer</th>
+                <td>WebSocket으로 접속한 사용자 한 명의 세션을 담당</td>
+                <td>관심 있는 guild마다 담당 remote node를 조회</td>
+              </tr>
+              <tr>
+                <th scope="row">ring process</th>
+                <td>consistent hash ring을 소유하고 조회 요청을 처리</td>
+                <td>guild 같은 entity의 key를 받아 Erlang node를 반환</td>
+              </tr>
+              <tr>
+                <th scope="row">guild registry</th>
+                <td>찾아간 guild node 안에서 실제 guild PID를 조회</td>
+                <td>node 위치가 아니라 실행 중인 process 식별자를 반환</td>
+              </tr>
+              <tr>
+                <th scope="row">guild GenServer</th>
+                <td>guild의 상태와 메시지 처리를 담당</td>
+                <td>session process와 실제 이벤트를 주고받음</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section
+          class="lesson-section section-card"
+          id="bottleneck"
+          aria-labelledby="bottleneck-title"
+        >
+          <div class="label-row">
+            <span class="evidence-label evidence-label--analogy">비유</span>
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+          </div>
+          <p class="chapter-number">2. 한곳에 생긴 긴 줄</p>
+          <h2 id="bottleneck-title">모두 한 <span class="nowrap">안내 데스크</span>에 물어봤어요</h2>
+          <p class="section-intro">
+            처음에는 session process들이 ring을 관리하는 하나의 process에
+            request/reply로 물었습니다. 좋은 지도가 있어도 질문을 받는 곳이
+            하나라면, 사람이 몰릴 때 긴 줄이 생깁니다.
+          </p>
+
+          <div class="note note--caution">
+            <strong>여기서 볼 것은 숫자가 아니라 줄의 위치예요</strong>
+            사용자가 많아질수록 모든 질문이 하나의 ring process에 모입니다.
+            그래서 해시 계산 자체보다 “누가 ring을 읽는가”가 병목이 됩니다.
+          </div>
+
+          <figure id="bottleneck-diagram" aria-labelledby="desk-figure-caption">
+            <svg
+              class="diagram-wide"
+              viewBox="0 0 720 640"
+              role="img"
+              aria-labelledby="desk-svg-title desk-svg-desc"
+            >
+              <title id="desk-svg-title">ring 담당 process를 거치는 방식과 공유 해시 링을 직접 읽는 방식 비교</title>
+              <desc id="desk-svg-desc">
+                위쪽은 네 session process의 요청이 대기 줄을 거쳐 하나의 ring 담당 process로 들어가고, 그 process가 해시 링에서 담당 node를 고른다.
+                아래쪽은 네 session process가 같은 공유 해시 링을 직접 읽어, 각자 key의 hash 위치에서 시계 방향 첫 node를 고른다.
+              </desc>
+              <defs>
+                <marker id="queue-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#C84E2F" />
+                </marker>
+                <marker id="shared-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#356B4A" />
+                </marker>
+              </defs>
+
+              <rect class="svg-hot" x="24" y="24" width="672" height="270" rx="16" />
+              <text class="svg-text svg-text--hot" x="52" y="64" font-size="24" font-weight="800">이전: 줄을 선 뒤, 한 명이 링을 읽기</text>
+              <text class="svg-text svg-text--muted" x="52" y="92" font-size="16">S1~S4의 질문은 먼저 같은 대기 줄에 들어갑니다.</text>
+
+              <g aria-hidden="true">
+                <rect class="svg-card" x="52" y="130" width="52" height="42" rx="10" />
+                <rect class="svg-card" x="52" y="182" width="52" height="42" rx="10" />
+                <rect class="svg-card" x="52" y="234" width="52" height="42" rx="10" />
+                <rect class="svg-card" x="120" y="156" width="52" height="42" rx="10" />
+                <text class="svg-text" x="78" y="156" text-anchor="middle" font-size="14" font-weight="800">S1</text>
+                <text class="svg-text" x="78" y="208" text-anchor="middle" font-size="14" font-weight="800">S2</text>
+                <text class="svg-text" x="78" y="260" text-anchor="middle" font-size="14" font-weight="800">S3</text>
+                <text class="svg-text" x="146" y="182" text-anchor="middle" font-size="14" font-weight="800">S4</text>
+                <path class="svg-arrow-hot" d="M 106 151 L 230 151" marker-end="url(#queue-arrow)" />
+                <path class="svg-arrow-hot" d="M 106 203 L 230 175" marker-end="url(#queue-arrow)" />
+                <path class="svg-arrow-hot" d="M 106 255 L 230 199" marker-end="url(#queue-arrow)" />
+                <path class="svg-arrow-hot" d="M 174 177 L 230 223" marker-end="url(#queue-arrow)" />
+              </g>
+
+              <rect class="svg-card" x="234" y="126" width="88" height="126" rx="12" />
+              <text class="svg-text svg-text--hot" x="278" y="151" text-anchor="middle" font-size="15" font-weight="800">대기 줄</text>
+              <rect x="252" y="166" width="52" height="10" rx="5" fill="#FBE7DE" stroke="#C84E2F" />
+              <rect x="252" y="184" width="52" height="10" rx="5" fill="#FBE7DE" stroke="#C84E2F" />
+              <rect x="252" y="202" width="52" height="10" rx="5" fill="#FBE7DE" stroke="#C84E2F" />
+              <rect x="252" y="220" width="52" height="10" rx="5" fill="#FBE7DE" stroke="#C84E2F" />
+
+              <path class="svg-arrow-hot" d="M 324 189 L 400 189" marker-end="url(#queue-arrow)" />
+              <rect class="svg-card" x="406" y="134" width="138" height="108" rx="12" />
+              <text class="svg-text" x="475" y="166" text-anchor="middle" font-size="16" font-weight="800">ring 담당</text>
+              <text class="svg-text" x="475" y="188" text-anchor="middle" font-size="16" font-weight="800">process</text>
+              <text class="svg-text svg-text--hot" x="475" y="216" text-anchor="middle" font-size="13">key를 받아서</text>
+              <text class="svg-text svg-text--hot" x="475" y="234" text-anchor="middle" font-size="13">혼자 ring 조회</text>
+
+              <path class="svg-arrow-hot" d="M 546 189 L 570 189" marker-end="url(#queue-arrow)" />
+              <circle cx="626" cy="188" r="54" fill="none" stroke="#C84E2F" stroke-width="4" />
+              <circle cx="592" cy="225" r="10" fill="#FFFDF8" stroke="#C84E2F" stroke-width="3" />
+              <circle cx="626" cy="134" r="10" fill="#FFFDF8" stroke="#C84E2F" stroke-width="3" />
+              <circle cx="665" cy="220" r="10" fill="#FFFDF8" stroke="#C84E2F" stroke-width="3" />
+              <circle cx="600" cy="153" r="6" fill="#C84E2F" />
+              <path d="M 600 153 A 54 54 0 0 1 626 134" fill="none" stroke="#C84E2F" stroke-width="3" marker-end="url(#queue-arrow)" />
+              <text class="svg-text svg-text--hot" x="626" y="182" text-anchor="middle" font-size="13" font-weight="800">hash ring</text>
+              <text class="svg-text svg-text--muted" x="626" y="202" text-anchor="middle" font-size="12">key 위치 → node B</text>
+
+              <rect class="svg-fact" x="24" y="324" width="672" height="292" rx="16" />
+              <text class="svg-text svg-text--fact" x="52" y="364" font-size="24" font-weight="800">이후: 각자가 같은 해시 링을 바로 읽기</text>
+              <text class="svg-text svg-text--muted" x="52" y="392" font-size="16">대기 줄 없이, 각 process가 key를 해시해 같은 규칙으로 node를 고릅니다.</text>
+
+              <g aria-hidden="true">
+                <rect class="svg-card" x="52" y="428" width="58" height="38" rx="10" />
+                <rect class="svg-card" x="52" y="476" width="58" height="38" rx="10" />
+                <rect class="svg-card" x="52" y="524" width="58" height="38" rx="10" />
+                <rect class="svg-card" x="130" y="452" width="58" height="38" rx="10" />
+                <text class="svg-text" x="81" y="453" text-anchor="middle" font-size="14" font-weight="800">S1</text>
+                <text class="svg-text" x="81" y="501" text-anchor="middle" font-size="14" font-weight="800">S2</text>
+                <text class="svg-text" x="81" y="549" text-anchor="middle" font-size="14" font-weight="800">S3</text>
+                <text class="svg-text" x="159" y="477" text-anchor="middle" font-size="14" font-weight="800">S4</text>
+                <path class="svg-arrow-shared" d="M 112 447 L 370 447" marker-end="url(#shared-arrow)" />
+                <path class="svg-arrow-shared" d="M 112 495 L 370 472" marker-end="url(#shared-arrow)" />
+                <path class="svg-arrow-shared" d="M 112 543 L 370 520" marker-end="url(#shared-arrow)" />
+                <path class="svg-arrow-shared" d="M 190 471 L 370 495" marker-end="url(#shared-arrow)" />
+              </g>
+              <text class="svg-text svg-text--fact" x="224" y="575" text-anchor="middle" font-size="14" font-weight="800">대기 줄 없음</text>
+
+              <circle cx="440" cy="488" r="78" fill="none" stroke="#356B4A" stroke-width="4" />
+              <circle cx="395" cy="549" r="11" fill="#FFFDF8" stroke="#356B4A" stroke-width="3" />
+              <circle cx="440" cy="410" r="11" fill="#FFFDF8" stroke="#356B4A" stroke-width="3" />
+              <circle cx="510" cy="514" r="11" fill="#FFFDF8" stroke="#356B4A" stroke-width="3" />
+              <circle cx="407" cy="432" r="7" fill="#C84E2F" />
+              <path d="M 407 432 A 78 78 0 0 1 440 410" fill="none" stroke="#356B4A" stroke-width="4" marker-end="url(#shared-arrow)" />
+              <text class="svg-text svg-text--fact" x="440" y="477" text-anchor="middle" font-size="17" font-weight="800">공유 hash ring</text>
+              <text class="svg-text svg-text--muted" x="440" y="500" text-anchor="middle" font-size="13">key hash 위치에서</text>
+              <text class="svg-text svg-text--muted" x="440" y="519" text-anchor="middle" font-size="13">시계 방향 첫 node</text>
+
+              <path class="svg-arrow-shared" d="M 520 488 L 575 488" marker-end="url(#shared-arrow)" />
+              <rect class="svg-card" x="582" y="445" width="88" height="86" rx="12" />
+              <text class="svg-text svg-text--fact" x="626" y="477" text-anchor="middle" font-size="17" font-weight="800">node B</text>
+              <text class="svg-text svg-text--muted" x="626" y="501" text-anchor="middle" font-size="13">모두 같은</text>
+              <text class="svg-text svg-text--muted" x="626" y="519" text-anchor="middle" font-size="13">담당 node 선택</text>
+            </svg>
+            <svg
+              class="diagram-mobile"
+              viewBox="0 0 320 720"
+              role="img"
+              aria-labelledby="desk-mobile-title desk-mobile-desc"
+            >
+              <title id="desk-mobile-title">모바일용 한 안내 데스크와 공유 지도 비교</title>
+              <desc id="desk-mobile-desc">
+                위쪽은 여러 요청이 ring process 한곳에 모이고, 아래쪽은 여러 process가 같은 공유 ring을 각자 읽는다.
+              </desc>
+
+              <rect class="svg-hot" x="12" y="12" width="296" height="310" rx="16" />
+              <text class="svg-text svg-text--hot" x="28" y="50" font-size="19" font-weight="800">이전: 한곳에 줄 서기</text>
+              <text class="svg-text svg-text--muted" x="28" y="76" font-size="14">요청이 한 담당자에게 모여요</text>
+              <g aria-hidden="true">
+                <circle class="svg-card" cx="42" cy="126" r="16" />
+                <circle class="svg-card" cx="82" cy="126" r="16" />
+                <circle class="svg-card" cx="122" cy="126" r="16" />
+                <circle class="svg-card" cx="162" cy="126" r="16" />
+                <circle class="svg-card" cx="202" cy="126" r="16" />
+                <path class="svg-arrow-hot" d="M 58 126 L 250 190" />
+                <path class="svg-arrow-hot" d="M 98 126 L 250 200" />
+                <path class="svg-arrow-hot" d="M 138 126 L 250 210" />
+                <path class="svg-arrow-hot" d="M 178 126 L 250 220" />
+                <path class="svg-arrow-hot" d="M 218 126 L 250 230" />
+              </g>
+              <rect class="svg-card" x="72" y="176" width="220" height="112" rx="12" />
+              <text class="svg-text" x="182" y="216" text-anchor="middle" font-size="17" font-weight="800">ring 담당 process</text>
+              <text class="svg-text svg-text--hot" x="182" y="250" text-anchor="middle" font-size="15" font-weight="800">요청이 한 줄로 밀려요</text>
+
+              <rect class="svg-fact" x="12" y="350" width="296" height="358" rx="16" />
+              <text class="svg-text svg-text--fact" x="28" y="390" font-size="19" font-weight="800">이후: 같은 지도 읽기</text>
+              <text class="svg-text svg-text--muted" x="28" y="416" font-size="14">각 process가 공유 값을 바로 읽어요</text>
+              <rect class="svg-card" x="54" y="460" width="212" height="96" rx="12" />
+              <text class="svg-text svg-text--shared" x="160" y="498" text-anchor="middle" font-size="17" font-weight="800">공유 read-only ring</text>
+              <text class="svg-text svg-text--muted" x="160" y="526" text-anchor="middle" font-size="14">한 지도, 각자 바로 읽기</text>
+              <g aria-hidden="true">
+                <circle class="svg-card" cx="46" cy="652" r="18" />
+                <circle class="svg-card" cx="103" cy="652" r="18" />
+                <circle class="svg-card" cx="160" cy="652" r="18" />
+                <circle class="svg-card" cx="217" cy="652" r="18" />
+                <circle class="svg-card" cx="274" cy="652" r="18" />
+                <path class="svg-arrow-shared" d="M 54 634 L 92 554" />
+                <path class="svg-arrow-shared" d="M 108 634 L 126 556" />
+                <path class="svg-arrow-shared" d="M 160 634 L 160 558" />
+                <path class="svg-arrow-shared" d="M 212 634 L 194 556" />
+                <path class="svg-arrow-shared" d="M 266 634 L 228 554" />
+              </g>
+            </svg>
+            <figcaption id="desk-figure-caption">
+              위는 질문이 한곳으로 몰리는 구조이고, 아래는 같은 지도를 여러
+              process가 각자 읽는 구조입니다.
+            </figcaption>
+          </figure>
+
+          <div class="note note--caution">
+            <strong>이 그림은 성능 숫자 비교가 아니에요</strong>
+            한 번의 해시 계산이 오래 걸린다는 뜻이 아니라, 요청이 한 곳에
+            직렬로 모이면 대기 줄이 생긴다는 구조를 보여줍니다.
+          </div>
+
+          <h3>왜 process 하나가 전체 속도를 제한했을까요?</h3>
+          <table class="check-table">
+            <thead>
+              <tr>
+                <th scope="col">원인</th>
+                <th scope="col">내부에서 벌어지는 일</th>
+                <th scope="col">결과</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">직렬 처리</th>
+                <td>ring을 제어하는 한 process가 자신의 mailbox에서 요청을 하나씩 꺼냄</td>
+                <td>CPU core가 많아도 이 경로는 한 담당자의 처리량에 묶임</td>
+              </tr>
+              <tr>
+                <th scope="row">request/reply</th>
+                <td>요청 전송, 상대 process 실행, 답 전송, 호출자 깨우기가 필요함</td>
+                <td>ring 계산 외에도 process 사이 왕복 비용이 생김</td>
+              </tr>
+              <tr>
+                <th scope="row">재접속 burst</th>
+                <td>최대 50만 session이 평균 5개 guild의 node를 거의 동시에 물음</td>
+                <td>많은 요청이 짧은 시간에 mailbox로 몰림</td>
+              </tr>
+              <tr>
+                <th scope="row">de-scheduling</th>
+                <td>BEAM scheduler가 공정성을 위해 바쁜 ring process도 잠시 멈출 수 있음</td>
+                <td>해시 계산 외에 대기와 스케줄링 지연이 더해질 수 있음</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="lesson-section section-card" id="ets" aria-labelledby="ets-title">
+          <div class="label-row">
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+          </div>
+          <p class="chapter-number">3. 첫 번째 개선</p>
+          <h2 id="ets-title">ETS에서 직접 읽게 했지만 복사가 남았어요</h2>
+          <p class="section-intro">
+            Discord는 ring을 pure Elixir로 바꾸고 ETS라는 빠른 메모리
+            테이블에 넣었습니다. 여러 process가 한 담당자에게 묻지 않고 직접
+            읽을 수 있게 된 점은 좋아졌습니다.
+          </p>
+          <div class="ets-explainer" aria-label="ETS가 하는 일과 큰 ring 복사 설명">
+            <h3>ETS는 무엇인가요?</h3>
+            <p>
+              <strong>ETS(Erlang Term Storage)</strong>는 BEAM VM 안에 있는
+              공유 인메모리 표입니다. 여러 process가 이름으로 같은 표를 찾아
+              직접 읽을 수 있으므로, ring 담당 process에게 메시지를 보낼 필요가
+              없습니다.
+            </p>
+            <div class="ets-flow">
+              <div class="ets-flow__box">
+                <strong>ring을 갱신하는 쪽</strong>
+                <span>새로운 hash ring 값을 준비</span>
+              </div>
+              <div class="ets-flow__arrow">
+                <strong>표에 저장</strong>
+              </div>
+              <div class="ets-flow__box ets-flow__box--table">
+                <strong>ETS 표</strong>
+                <span>여러 process가 직접 lookup 가능</span>
+              </div>
+              <div class="ets-flow__arrow ets-flow__arrow--copy">
+                <strong>큰 값 복사</strong>
+              </div>
+              <div class="ets-flow__box ets-flow__box--copy">
+                <strong>session process의 heap</strong>
+                <span>꺼낸 큰 ring 값이 여기로 복사됨</span>
+              </div>
+            </div>
+            <p>
+              그래서 ETS는 <strong>중앙 대기 줄</strong>은 없앴지만,
+              큰 ring을 읽을 때마다 caller process의 heap으로 값이 복사되는
+              문제까지 없애지는 못했습니다.
+            </p>
+          </div>
+          <div class="stage-grid">
+            <article class="stage-card stage-card--hot" aria-labelledby="stage-one-title">
+              <span class="stage-card__index">처음</span>
+              <h3 id="stage-one-title">단일 ring process</h3>
+              <p>request/reply가 한곳에 모여 중앙 <span class="nowrap">대기 줄</span>이 생겼어요.</p>
+              <p class="stage-card__metric">문제: 요청이 한곳에 직렬로 모임</p>
+            </article>
+            <article class="stage-card stage-card--middle" aria-labelledby="stage-two-title">
+              <span class="stage-card__index">중간 시도</span>
+              <h3 id="stage-two-title">ETS 직접 읽기</h3>
+              <p>중앙 줄은 줄었지만, 큰 ring을 읽을 때 복사 비용이 남았어요.</p>
+              <p class="stage-card__metric">개선: 각 process가 ring을 직접 읽음</p>
+            </article>
+            <article class="stage-card stage-card--shared" aria-labelledby="stage-three-title">
+              <span class="stage-card__index">최종 개선</span>
+              <h3 id="stage-three-title">FastGlobal 공유 읽기</h3>
+              <p>큰 값을 매번 복사하지 않고 공유된 값처럼 바로 읽었어요.</p>
+              <p class="stage-card__metric">최적화: 큰 값을 복사 없이 공유해 읽음</p>
+            </article>
+          </div>
+          <div class="note note--caution">
+            <strong>ETS가 나쁜 도구라는 뜻은 아니에요</strong>
+            이 사례에서는 큰 ring, 아주 잦은 읽기, process 쪽으로의 복사가
+            함께 겹쳐 충분히 빠르지 않았습니다. “메모리에 있다”와 “복사 비용이
+            없다”는 같은 말이 아닙니다.
+          </div>
+
+          <h3>ETS가 없앤 비용과 남긴 비용</h3>
+          <p class="code-path">
+            이전: session process → ring process에 질문 → C port 기반 ring 조회 → 답장<br />
+            ETS: session process → ETS에서 ring 직접 읽기 → caller process에서 lookup
+          </p>
+          <p>
+            C port가 ring을 제어하던 구조에서는 ring 값을 ETS에서 바로 읽기 어려워,
+            Discord는 먼저 ring 구현을 pure Elixir로 바꿨습니다. 그 뒤 ring 값을
+            ETS에 넣고 다른 process가 직접 읽게 했습니다. 중앙 request/reply는
+            줄었지만, ETS에서 꺼낸 큰 Erlang term은 읽는 process의 heap으로
+            복사됩니다. ring 자체가 컸기 때문에 이 메모리 복사가 lookup 비용의 큰
+            부분을 차지했습니다.
+          </p>
+          <div class="note note--fact">
+            <strong>핵심 구분: 저장 위치와 읽은 뒤의 소유권</strong>
+            ETS가 같은 VM 안의 메모리에 있다는 사실만으로 모든 process가 같은 객체를
+            그대로 참조하는 것은 아닙니다. 이 사례에서 필요한 것은 빠른 table보다
+            “큰 값을 caller heap으로 반복 복사하지 않는 읽기 경로”였습니다.
+          </div>
+        </section>
+
+        <section
+          class="lesson-section section-card"
+          id="fastglobal"
+          aria-labelledby="fastglobal-title"
+        >
+          <div class="label-row">
+            <span class="evidence-label evidence-label--analogy">비유</span>
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+            <span class="evidence-label evidence-label--caution">주의</span>
+          </div>
+          <p class="chapter-number">4. 읽는 길 바꾸기</p>
+          <h2 id="fastglobal-title">FastGlobal은 <span class="nowrap">큰 지도</span>를 함께 보게 했어요</h2>
+          <p class="section-intro">
+            FastGlobal은 Discord가 큰 <span class="nowrap">hash ring</span>을 빨리 읽기 위해
+            쓴 작은 Elixir 도구예요. <strong>해시 알고리즘도, node를 새로 고르는 규칙도 아니에요.</strong>
+            “거의 바뀌지 않는 큰 지도 하나를 VM 안에 읽기 전용으로 붙여 두고,
+            여러 process가 그 지도 자체를 함께 읽자”는 방법입니다.
+          </p>
+
+          <h3>먼저, FastGlobal이 정확히 한 일</h3>
+          <div class="stage-grid">
+            <article class="stage-card stage-card--shared">
+              <span class="stage-card__index">1 · 무엇인가?</span>
+              <h3>큰 값을 돌려주는 작은 helper</h3>
+              <p>FastGlobal은 “현재 ring을 돌려줘”라고 답하는 함수가 든 module을 runtime에 만듭니다. 여기서 module은 BEAM VM이 실행할 수 있는 작은 코드 파일이에요.</p>
+            </article>
+            <article class="stage-card stage-card--middle">
+              <span class="stage-card__index">2 · 무엇을 해결했나?</span>
+              <h3>읽을 때의 대형 복사</h3>
+              <p>ETS에서는 session process가 큰 ring을 꺼낼 때 자기 heap에 사본을 받았습니다. FastGlobal에서는 여러 process가 같은 읽기 전용 ring을 보고, 매번 자기 사본을 만들지 않습니다.</p>
+            </article>
+            <article class="stage-card stage-card--hot">
+              <span class="stage-card__index">3 · 무엇을 포기했나?</span>
+              <h3>ring을 고치는 일은 무거워짐</h3>
+              <p>지도에 node 하나를 더하거나 빼려면, 기존 지도의 한 칸만 고치는 것이 아니라 새 ring이 든 module을 만들고 compile한 뒤 VM에 load해야 합니다.</p>
+            </article>
+          </div>
+
+          <div class="before-after">
+            <article class="comparison-card comparison-card--before" aria-labelledby="copy-map-title">
+              <h3 id="copy-map-title">큰 지도를 매번 복사</h3>
+              <ul>
+                <li>읽을 때마다 큰 값이 process 쪽으로 옮겨집니다.</li>
+                <li>학생 수가 늘수록 복사 일이 함께 늘어납니다.</li>
+                <li>ETS는 빠르지만 이 큰 값의 복사는 남습니다.</li>
+              </ul>
+            </article>
+            <article class="comparison-card comparison-card--after" aria-labelledby="share-map-title">
+              <h3 id="share-map-title">벽에 붙인 지도를 함께 보기</h3>
+              <ul>
+                <li>module의 constant pool(<span class="nowrap">상수를 보관하는 곳</span>)을 여러 process가 함께 읽는 shared heap처럼 활용합니다.</li>
+                <li>각 process가 같은 큰 값을 복사 없이 읽습니다.</li>
+                <li>읽는 일이 아주 많고 값 변경이 드문 상황에 잘 맞습니다.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="note note--caution">
+            <strong>대가를 학교 지도 비유로 정확히 말하면</strong><br />
+            ETS는 학생이 큰 지도를 볼 때마다 <strong>복사본을 한 장씩 받는 방식</strong>이에요.
+            FastGlobal은 복사 대신 벽의 큰 지도를 함께 보므로 읽기는 가벼워집니다.
+            하지만 지도가 바뀌면 벽에 붙은 지도를 <strong>통째로 새로 인쇄해서 갈아 끼워야</strong> 해요.
+            즉, <strong>매번 읽는 비용을 줄이는 대신, 드문 갱신 한 번의 비용을 더 크게 받아들인</strong> 선택입니다.
+          </div>
+
+          <h3>평소에 guild가 어느 node로 갈 때는 이렇게 읽어요</h3>
+          <p>
+            여기서 FastGlobal이 “<code>guild:42</code>는 node B야”라고 직접 결정하는 것은 아닙니다.
+            FastGlobal의 역할은 <strong>현재 hash ring 지도를 복사 없이 꺼내 주는 것</strong>뿐이에요.
+            실제로 어느 node를 고르는 계산은 요청을 처리하는 process가 합니다.
+          </p>
+          <p class="code-path">
+            요청을 처리하는 process<br />
+            → FastGlobal에 “현재 ring 지도 줘”라고 읽기 요청<br />
+            → 공유된 읽기 전용 ring을 큰 복사본 없이 받음<br />
+            → <code>guild:42</code>를 해시해 ring 위의 위치를 계산<br />
+            → 시계 방향으로 처음 만나는 node를 찾음<br />
+            → node B로 guild 생성 또는 메시지 전달
+          </p>
+          <p>
+            따라서 FastGlobal은 <strong>길 안내 책을 꺼내 주는 책장</strong>에 가깝고,
+            요청을 처리하는 process는 그 지도를 보고 실제 길을 고르는 사람에 가깝습니다.
+            FastGlobal이 ring을 읽게 해 주어도 안정 해시의 “해시하기 → 시계 방향 첫 node 찾기” 규칙은 그대로예요.
+          </p>
+
+          <h3>그럼 ring이 바뀌는 날에는 누가 무엇을 하나요?</h3>
+          <p>
+            node가 추가되거나 빠지면, node 목록을 관리하는 쪽이 새 ring을 만듭니다.
+            그 뒤 FastGlobal에 새 지도를 넣어 달라고 요청합니다. 이때 FastGlobal은 ETS처럼
+            표의 한 칸을 바꾸는 방식이 아니라, <strong>새 ring을 담은 새 module을 만들어 옛 module 대신 load</strong>합니다.
+          </p>
+          <p class="code-path">
+            node 구성 변경 감지<br />
+            → 새 node 목록으로 새 ring 계산<br />
+            → 새 ring 값을 품은 FastGlobal module 생성<br />
+            → compile → BEAM VM에 load<br />
+            → 그 뒤의 요청 처리 process들은 새 ring을 읽음
+          </p>
+          <p>
+            이 작업에는 코드 생성과 compile, load가 필요하므로 매 요청마다 하기에는 너무 무겁습니다.
+            반대로 Discord의 ring은 읽는 횟수에 비해 바뀌는 횟수가 훨씬 적었어요.
+            그래서 “가끔 지도 전체를 교체하고, 평소에는 모두가 아주 빨리 읽기”가 이 사례에서는 이득이었습니다.
+          </p>
+
+          <h3>FastGlobal은 실제로 어떤 순서로 움직일까요?</h3>
+          <p class="code-path">
+            <strong>처음 ring 만들기 또는 node 구성 변경</strong><br />
+            1. 새 node 목록으로 새 ring을 계산<br />
+            2. 그 새 ring을 돌려주는 module을 runtime에 생성<br />
+            3. module을 compile하고 BEAM VM에 load<br />
+            4. 이후 session process들은 그 module을 호출해 같은 읽기 전용 ring을 바로 읽음
+          </p>
+          <p>
+            아이디어의 출발점은 <code>mochiglobal</code>이었습니다. Discord는 이를
+            Elixir로 옮기면서 값을 등록할 때 atom을 계속 새로 만들지 않도록 기능을
+            보강했고, 그 구현을 FastGlobal이라고 이름 붙였습니다. 여기서 중요한 점은
+            <strong>ring을 제자리에서 수정하는 공유 변수</strong>가 아니라는 거예요. ring이 바뀌면
+            새 module로 <strong>교체</strong>합니다. 그래서 설정처럼 읽기는 매우 많고 변경은 드문
+            큰 값에는 알맞지만, 사용자 상태처럼 초마다 바뀌는 데이터에는 맞지 않습니다.
+          </p>
+
+          <div class="note note--fact">
+            <strong>정확한 결론</strong>
+            핵심 개선은 “어떤 node가 맡을지 정하는 배치 규칙(placement
+            policy)”을 완전히 바꾼 일이 아닙니다. ring의 저장·조회 경로를 단일
+            process와 ETS 복사에서 공유 read-only 접근으로 최적화한 일입니다.
+            C port 구현을 pure Elixir로 바꾼 일도 있으므로 “알고리즘은 문자
+            그대로 아무것도 바뀌지 않았다”고 단정하지 않습니다.
+          </div>
+        </section>
+
+        <section class="lesson-section section-card" aria-labelledby="timing-title">
+          <div class="label-row">
+            <span class="evidence-label evidence-label--calc">계산값</span>
+            <span class="evidence-label evidence-label--caution">주의</span>
+          </div>
+          <p class="chapter-number">5. 구조로 비교하기</p>
+          <h2 id="timing-title">읽는 길을 바꾸면 줄이 사라져요</h2>
+          <p class="section-intro">
+            같은 ring을 읽더라도 누가 어떤 방식으로 읽는지에 따라 병목이
+            달라집니다. 아래 그림은 특정 장비의 벤치마크 숫자가 아니라,
+            세 가지 읽기 구조의 차이를 비교합니다.
+          </p>
+
+          <figure id="timing-diagram" aria-labelledby="timing-figure-caption">
+            <svg
+              class="diagram-wide"
+              viewBox="0 0 640 520"
+              role="img"
+              aria-labelledby="timing-svg-title timing-svg-desc"
+            >
+              <title id="timing-svg-title">세 가지 ring lookup 구조 비교</title>
+              <desc id="timing-svg-desc">
+                단일 process 방식은 요청이 한곳에 모이고, ETS 방식은 각 process가
+                직접 읽으며, FastGlobal 방식은 큰 값을 복사 없이 공유해 읽는다.
+              </desc>
+
+              <rect class="svg-hot" x="28" y="28" width="584" height="128" rx="16" />
+              <text class="svg-text svg-text--hot" x="56" y="72" font-size="23" font-weight="800">
+                1. 단일 ring process
+              </text>
+              <text class="svg-text" x="56" y="108" font-size="19">
+                모든 요청이 한 담당자에게 모임
+              </text>
+              <text class="svg-text svg-text--hot" x="584" y="110" text-anchor="end" font-size="28" font-weight="800">
+                직렬 대기 발생
+              </text>
+
+              <rect class="svg-card" x="28" y="196" width="584" height="128" rx="16" />
+              <text class="svg-text svg-text--shared" x="56" y="240" font-size="23" font-weight="800">
+                2. ETS 직접 읽기
+              </text>
+              <text class="svg-text" x="56" y="276" font-size="19">
+                각 process가 ETS에서 직접 읽음
+              </text>
+              <text class="svg-text svg-text--shared" x="584" y="278" text-anchor="end" font-size="28" font-weight="800">
+                중앙 줄 감소
+              </text>
+
+              <rect class="svg-fact" x="28" y="364" width="584" height="128" rx="16" />
+              <text class="svg-text svg-text--fact" x="56" y="408" font-size="23" font-weight="800">
+                3. FastGlobal 공유 읽기
+              </text>
+              <text class="svg-text" x="56" y="444" font-size="19">
+                공유 read-only 값에서 바로 읽음
+              </text>
+              <text class="svg-text svg-text--fact" x="584" y="446" text-anchor="end" font-size="28" font-weight="800">
+                복사 비용 감소
+              </text>
+            </svg>
+            <svg
+              class="diagram-mobile"
+              viewBox="0 0 320 540"
+              role="img"
+              aria-labelledby="timing-mobile-title timing-mobile-desc"
+            >
+              <title id="timing-mobile-title">모바일용 ring lookup 시간 비교</title>
+              <desc id="timing-mobile-desc">
+                request/reply, ETS 직접 읽기, 공유 read-only 읽기의 구조 차이를 세로 카드로 비교한다.
+              </desc>
+
+              <rect class="svg-hot" x="12" y="12" width="296" height="150" rx="16" />
+              <text class="svg-text svg-text--hot" x="28" y="50" font-size="18" font-weight="800">1. 단일 ring process</text>
+              <text class="svg-text" x="28" y="88" font-size="16">요청이 한 담당자에게 모임</text>
+              <text class="svg-text svg-text--hot" x="292" y="130" text-anchor="end" font-size="26" font-weight="800">직렬 대기</text>
+
+              <rect class="svg-card" x="12" y="195" width="296" height="150" rx="16" />
+              <text class="svg-text svg-text--shared" x="28" y="233" font-size="18" font-weight="800">2. ETS 직접 읽기</text>
+              <text class="svg-text" x="28" y="271" font-size="16">각 process가 ETS에서 직접 읽음</text>
+              <text class="svg-text svg-text--shared" x="292" y="313" text-anchor="end" font-size="26" font-weight="800">직접 읽기</text>
+
+              <rect class="svg-fact" x="12" y="378" width="296" height="150" rx="16" />
+              <text class="svg-text svg-text--fact" x="28" y="416" font-size="18" font-weight="800">3. FastGlobal 공유 읽기</text>
+              <text class="svg-text" x="28" y="454" font-size="16">큰 값을 복사 없이 공유해 읽음</text>
+              <text class="svg-text svg-text--fact" x="292" y="496" text-anchor="end" font-size="26" font-weight="800">공유 읽기</text>
+            </svg>
+            <figcaption id="timing-figure-caption">
+              숫자 벤치마크가 아니라, 요청이 모이는 위치와 ring을 읽는 방식을
+              비교한 그림입니다.
+            </figcaption>
+          </figure>
+        </section>
+
+        <section
+          class="lesson-section section-card"
+          id="limited-concurrency"
+          aria-labelledby="limited-concurrency-title"
+        >
+          <div class="label-row">
+            <span class="evidence-label evidence-label--analogy">비유</span>
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+            <span class="evidence-label evidence-label--caution">주의</span>
+          </div>
+          <p class="chapter-number">6. 빨라진 뒤의 새 문제</p>
+          <h2 id="limited-concurrency-title">
+            앞길을 뚫자, <span class="nowrap">다음 문 앞에</span>
+            <span class="nowrap">새 줄이 생겼어요</span>
+          </h2>
+          <p class="section-intro">
+            FastGlobal 덕분에 <span class="nowrap">remote Erlang node</span>를 빨리 찾자,
+            이번에는 그 뒤 단계인 <span class="nowrap">guild_pid lookup</span>에 요청이 한꺼번에
+            몰렸습니다. 느렸던 앞길이 뜻밖에 <span class="nowrap">속도 조절 장치처럼</span>
+            작동하고 있었던 거예요.
+          </p>
+
+          <div class="stage-grid" aria-label="새 병목과 semaphore 해결 흐름">
+            <div class="stage-card stage-card--shared">
+              <span class="stage-card__index">1단계 · 앞길이 빨라짐</span>
+              <h3>session들이 바로 다음 문으로 갔어요</h3>
+              <p>
+                거의 500만 session process가 <span class="nowrap">guild node</span> 쪽의
+                registry process <span class="nowrap">열 개로</span> 빠르게 향했습니다.
+              </p>
+            </div>
+            <div class="stage-card stage-card--hot">
+              <span class="stage-card__index">2단계 · 새 줄이 생김</span>
+              <h3>시간 초과와 재시도가 줄을 더 키웠어요</h3>
+              <p>
+                끝난 줄 알았던 요청도 queue에 남고 다시 시도되어, message queue와 메모리가
+                계속 커질 수 있었습니다.
+              </p>
+            </div>
+            <div class="stage-card stage-card--middle">
+              <span class="stage-card__index">3단계 · 입장표를 둠</span>
+              <h3>
+                semaphore가 동시에 들어가는 <span class="nowrap">요청 수를</span> 제한했어요
+              </h3>
+              <p>
+                자리가 꽉 차면 실패할 요청을 미리 돌려보내, registry가 감당할 수 있는 만큼만
+                통과시켰습니다.
+              </p>
+            </div>
+          </div>
+
+          <div class="note note--fact">
+            <strong>실제 구현</strong>
+            Discord는 ETS의 <span class="nowrap">:ets.update_counter/4</span>로 숫자를 원자적으로
+            조건부 증가시키고, <span class="nowrap">write_concurrency</span>를 사용해 Semaphore
+            라이브러리의 바탕을 만들었습니다. 학교 비유로는 “남은 입장표가 있을 때만 한 장
+            가져가기”와 비슷합니다.
+          </div>
+
+          <div class="note note--caution">
+            <strong>두 lookup을 섞지 않기</strong>
+            앞에서 FastGlobal이 빠르게 만든 것은 ring을 읽어 <span class="nowrap">remote node</span>를
+            찾는 단계입니다. semaphore가 보호한 것은 그다음 <span class="nowrap">guild_pid</span>를
+            찾는 단계입니다. semaphore가 안정 해시나 FastGlobal을 대신한 것은 아닙니다.
+          </div>
+
+          <h3>timeout이 났는데도 왜 queue가 계속 커졌을까요?</h3>
+          <table class="check-table">
+            <thead>
+              <tr>
+                <th scope="col">순서</th>
+                <th scope="col">session 쪽</th>
+                <th scope="col">guild registry 쪽</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">1. 요청</th>
+                <td>guild PID를 찾는 call을 보냄</td>
+                <td>요청이 mailbox 뒤에 쌓임</td>
+              </tr>
+              <tr>
+                <th scope="row">2. timeout</th>
+                <td>기다리기를 포기하고 실패로 판단</td>
+                <td>이미 보낸 요청은 자동 취소되지 않아 queue에 남을 수 있음</td>
+              </tr>
+              <tr>
+                <th scope="row">3. retry</th>
+                <td>backoff 뒤에 같은 종류의 요청을 다시 보냄</td>
+                <td>옛 요청 위에 새 요청까지 더해져 회복보다 유입이 빨라짐</td>
+              </tr>
+              <tr>
+                <th scope="row">4. 연쇄 장애</th>
+                <td>기다리는 동안 다른 서비스의 메시지도 mailbox에 축적</td>
+                <td>메모리 사용량이 커지고 VM 전체가 OOM에 이를 수 있음</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="note note--fact">
+            <strong>semaphore의 역할은 더 빨리 처리하는 것이 아니에요</strong>
+            처리 가능한 수보다 요청이 많을 때 일부를 입구에서 빠르게 실패시켜,
+            registry의 queue가 회복 불가능한 크기로 자라는 것을 막았습니다. 이는
+            처리량 최적화라기보다 overload protection과 backpressure 설계입니다.
+          </div>
+        </section>
+
+        <section class="lesson-section section-card" aria-labelledby="comparison-title">
+          <div class="label-row">
+            <span class="evidence-label evidence-label--analogy">비유</span>
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+          </div>
+          <p class="chapter-number">7. 전후 한눈에 보기</p>
+          <h2 id="comparison-title">세 단계에서 비용의 위치가 달라졌어요</h2>
+          <table class="check-table">
+            <thead>
+              <tr>
+                <th scope="col">비교할 것</th>
+                <th scope="col">처음: ring process</th>
+                <th scope="col">중간: ETS</th>
+                <th scope="col">최종: FastGlobal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">요청 경로</th>
+                <td>session → ring process → C port</td>
+                <td>session process가 ETS를 직접 읽음</td>
+                <td>session process가 runtime module을 직접 호출</td>
+              </tr>
+              <tr>
+                <th scope="row">주요 비용</th>
+                <td>process 왕복과 한 mailbox의 중앙 queue</td>
+                <td>큰 ring을 caller heap으로 복사</td>
+                <td>공유 상수 lookup이라 읽을 때 복사하지 않음</td>
+              </tr>
+              <tr>
+            <th scope="row">읽는 방식</th>
+            <td>한 process에 질문하고 답을 받음</td>
+            <td>각 process가 ETS를 직접 읽음</td>
+            <td>공유 상수를 복사 없이 읽음</td>
+              </tr>
+              <tr>
+                <th scope="row">대가</th>
+                <td>burst 때 중앙 처리량에 묶임</td>
+                <td>ring 소유 process가 ETS 사본을 계속 갱신</td>
+            <td>node 변경 때 새 ring 계산 → module 생성 → compile → load가 필요함</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="lesson-section section-card" aria-labelledby="real-system-title">
+          <div class="label-row">
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+          </div>
+          <p class="chapter-number">8. 비유를 실제 시스템으로 바꾸기</p>
+          <h2 id="real-system-title">학교 지도 속 역할은 실제로 무엇일까요?</h2>
+          <p class="section-intro">
+            지금까지의 학교 비유를 실제 2017년 Discord 흐름으로 다시
+            연결해 봅시다.
+          </p>
+          <button
+            class="disclosure-button"
+            id="real-system-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="real-system-panel"
+          >
+            실제 요청 경로 펼쳐 보기
+          </button>
+          <div class="real-system-panel" id="real-system-panel" hidden>
+            <h3>실제 요청 경로</h3>
+            <p class="code-path">
+              WebSocket → <span class="nowrap">session GenServer</span> → guild 같은 entity의
+              <span class="nowrap">remote Erlang node</span>를 ring에서 조회 →
+              <span class="nowrap">해당 node</span>의
+              <span class="nowrap">guild GenServer와 통신</span>
+            </p>
+            <p>
+              초기 ring 조회는 session process가 request/reply로 ring 제어
+              Erlang process에 묻고, 그 process가 C port 기반 hash ring에서
+              remote node를 찾아 돌려주는 경로였습니다.
+            </p>
+            <p>
+              FastGlobal은 runtime에 정적 값을 반환하는 module을
+              compile/load하고, caller가 그 값을 읽게 했습니다. 이 덕분에 큰
+              ring을 process마다 반복 복사하지 않았습니다.
+            </p>
+          </div>
+        </section>
+
+        <section class="lesson-section section-card" aria-labelledby="lessons-title">
+          <div class="label-row">
+            <span class="evidence-label evidence-label--fact">설계 원리</span>
+            <span class="evidence-label evidence-label--caution">주의</span>
+          </div>
+          <p class="chapter-number">9. 사례에서 꺼낸 설계 원리</p>
+          <h2 id="lessons-title">Discord만의 문제가 아니라, 시스템 설계 문제예요</h2>
+          <p class="section-intro">
+            이 사례의 값은 FastGlobal이라는 도구 이름을 외우는 데 있지 않습니다.
+            부하가 커질 때 어디서 queue가 생기고, 최적화 뒤의 다음 병목을 어떻게
+            예측할지 배우는 데 있습니다.
+          </p>
+          <div class="stage-grid">
+            <article class="stage-card stage-card--hot">
+              <span class="stage-card__index">원리 1 · hot path</span>
+              <h3>작은 비용도 호출 횟수와 곱해져요</h3>
+              <p>작은 비용도 호출이 반복되면 커집니다. 평균 지연만 보지 말고 burst 때 요청이 어느 줄에 쌓이는지 먼저 봐야 합니다.</p>
+            </article>
+            <article class="stage-card stage-card--middle">
+              <span class="stage-card__index">원리 2 · serialization</span>
+              <h3>공유 상태의 주인 하나가 직렬화 지점이 될 수 있어요</h3>
+              <p>process가 가볍다는 사실과 한 process가 무한한 처리량을 가진다는 말은 다릅니다. mailbox 한곳에 모이면 그곳이 상한선입니다.</p>
+            </article>
+            <article class="stage-card stage-card--shared">
+              <span class="stage-card__index">원리 3 · data shape</span>
+              <h3>도구보다 데이터의 읽기·쓰기 비율을 먼저 봐요</h3>
+              <p>ring은 크고, 읽기는 매우 많고, 변경은 드물었습니다. 그래서 느린 갱신과 빠른 공유 읽기의 교환이 성립했습니다.</p>
+            </article>
+            <article class="stage-card stage-card--hot">
+              <span class="stage-card__index">원리 4 · backpressure</span>
+              <h3>앞단의 느림이 우연한 보호막일 수도 있어요</h3>
+              <p>node lookup을 빠르게 하자 뒤의 registry가 무너졌습니다. 한 단계를 최적화하면 다음 단계가 같은 유입량을 버틸지 다시 계산해야 합니다.</p>
+            </article>
+            <article class="stage-card stage-card--middle">
+              <span class="stage-card__index">원리 5 · overload protection</span>
+              <h3>늦은 성공보다 빠른 실패가 시스템을 살릴 때가 있어요</h3>
+              <p>이미 성공할 수 없는 요청을 queue에 넣지 않으면 메모리와 retry 폭증을 막고, 정상 요청이 회복할 공간을 남길 수 있습니다.</p>
+            </article>
+          </div>
+          <div class="note note--caution">
+            <strong>다른 시스템에 그대로 복사하지 않기</strong>
+            FastGlobal이 항상 ETS보다 낫다는 결론은 아닙니다. 데이터가 자주 바뀌거나
+            작다면 ETS가 더 단순하고 알맞을 수 있습니다. 먼저 값의 크기, 변경 빈도,
+            읽기 횟수, 복사 비용, 실패 시 queue 동작을 측정해야 합니다.
+          </div>
+        </section>
+
+        <section
+          class="lesson-section section-card"
+          id="glossary"
+          aria-labelledby="glossary-title"
+        >
+          <div class="label-row">
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+          </div>
+          <p class="chapter-number">10. 용어 사전</p>
+          <h2 id="glossary-title">낯선 말을 짧게 정리해요</h2>
+          <dl class="glossary-grid">
+            <div class="term">
+              <dt>guild</dt>
+              <dd>Discord 안의 커뮤니티 서버를 뜻하는 이름입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>session process</dt>
+              <dd>접속한 사용자 한 명의 연결과 활동을 담당하는 process입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>Erlang node</dt>
+              <dd>여러 Erlang process가 실행되는 runtime 단위입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>lookup</dt>
+              <dd>key를 보고 담당 위치나 값을 찾아보는 일입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>consistent hash ring</dt>
+              <dd>key와 node를 둥근 공간에 놓아 담당 node를 고르는 규칙입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>request/reply</dt>
+              <dd>다른 process에 질문을 보내고 답을 기다리는 통신 방식입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>ETS</dt>
+              <dd>Erlang VM이 제공하는 빠른 in-memory table입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>FastGlobal</dt>
+              <dd>Discord가 쓴 Elixir helper입니다. 거의 변하지 않는 큰 값을 읽기 전용으로 공유해, 읽을 때마다 각 process에 큰 사본을 만들지 않게 합니다. 대신 값이 바뀌면 새 module을 만들어 교체해야 합니다.</dd>
+            </div>
+            <div class="term">
+              <dt>hot path</dt>
+              <dd>시스템에서 아주 자주 실행되어 속도에 큰 영향을 주는 길입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>read-only</dt>
+              <dd>여러 곳에서 읽지만 자주 바꾸지는 않는 상태를 뜻합니다.</dd>
+            </div>
+            <div class="term">
+              <dt>semaphore</dt>
+              <dd>동시에 들어갈 수 있는 요청 수를 입장표처럼 제한하는 장치입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>mailbox</dt>
+              <dd>Erlang process가 받은 메시지를 처리하기 전까지 순서대로 보관하는 queue입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>backpressure</dt>
+              <dd>뒤 단계가 감당할 수 있도록 앞 단계의 요청 속도나 수를 조절하는 압력입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>PID</dt>
+              <dd>실행 중인 Erlang process를 가리키는 식별자입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>C port</dt>
+              <dd>Erlang VM이 외부 C 코드와 통신하도록 연결하는 경계입니다.</dd>
+            </div>
+            <div class="term">
+              <dt>OOM</dt>
+              <dd>메모리가 부족해져 process나 VM이 정상적으로 동작할 수 없는 상태입니다.</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="lesson-section section-card" id="quiz" aria-labelledby="quiz-title">
+          <div class="label-row">
+            <span class="evidence-label evidence-label--analogy">비유</span>
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+          </div>
+          <p class="chapter-number">11. 내가 이해했나?</p>
+          <h2 id="quiz-title">다섯 문제로 원리까지 확인해요</h2>
+          <p class="section-intro">
+            답을 고르면 바로 이유를 알려 드려요. 키보드의 Tab과 Enter만으로도
+            <span class="nowrap">풀 수 있습니다.</span>
+          </p>
+
+          <div class="quiz-list">
+            <div class="quiz-question">
+              <h3>1. 첫 구조가 느려진 <span class="nowrap">가장 큰</span> 이유는 무엇인가요?</h3>
+              <div class="quiz-options">
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="correct"
+                  data-explanation="많은 session process의 질문이 ring process 하나로 몰려 중앙에 긴&nbsp;줄이 생겼어요."
+                  aria-pressed="false"
+                >
+                  많은 질문이 ring process 한곳으로 몰렸기 때문
+                </button>
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="wrong"
+                  data-explanation="링 모양이 둥근 것은 길찾기 표현일 뿐, 병목의 원인이 아니에요."
+                  aria-pressed="false"
+                >
+                  링이 둥글게 생겼기 때문
+                </button>
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="wrong"
+                  data-explanation="사용자 수만의 문제가 아니라 모든 lookup이 한 경로에 모인 것이 핵심이에요."
+                  aria-pressed="false"
+                >
+                  사용자가 guild를 하나만 <span class="nowrap">가졌기 때문</span>
+                </button>
+              </div>
+              <p class="question-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="quiz-question">
+              <h3>2. ETS로 옮긴 뒤에도 비용이 남은 까닭은 무엇인가요?</h3>
+              <div class="quiz-options">
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="wrong"
+                  data-explanation="ETS는 메모리 안의 빠른 table이지만, 큰 값 복사는 따로 남을 수 있어요."
+                  aria-pressed="false"
+                >
+                  ETS가 디스크에만 저장되기 때문
+                </button>
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="correct"
+                  data-explanation="큰 ring을 읽을 때 process 쪽으로 복사하는 비용이 남았어요."
+                  aria-pressed="false"
+                >
+                  큰 ring 값을 읽을 때 복사 비용이 남았기 때문
+                </button>
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="wrong"
+                  data-explanation="guild 수를 없앤 것이 아니라 ring을 읽는 방식을 개선한 사례예요."
+                  aria-pressed="false"
+                >
+                  모든 guild가 사라졌기 때문
+                </button>
+              </div>
+              <p class="question-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="quiz-question">
+              <h3>3. FastGlobal의 핵심 생각은 무엇인가요?</h3>
+              <div class="quiz-options">
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="wrong"
+                  data-explanation="모든 값을 자주 바꾸는 것이 아니라, 거의 변하지 않는 큰 값을 빠르게 읽게 했어요."
+                  aria-pressed="false"
+                >
+                  ring을 매번 새로 만들어 모두에게 보낸다
+                </button>
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="wrong"
+                  data-explanation="ring process 수를 늘리는 대신 저장·조회 경로를 바꾸었어요."
+                  aria-pressed="false"
+                >
+                  안내 데스크 역할의 process를 무한히 늘린다
+                </button>
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="correct"
+                  data-explanation="거의 변하지 않는 큰 ring을 공유 read-only 값처럼 두어 여러 process가 복사 없이 읽었어요."
+                  aria-pressed="false"
+                >
+                  같은 큰 ring을 공유된 값처럼 두고 각자 바로 읽는다
+                </button>
+              </div>
+              <p class="question-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="quiz-question">
+              <h3>4. session 쪽에서 timeout이 나도 registry queue가 커질 수 있었던 이유는 무엇인가요?</h3>
+              <div class="quiz-options">
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="wrong"
+                  data-explanation="timeout은 session이 기다리기를 멈춘 것이지, registry가 이미 받은 요청을 모두 지웠다는 뜻은 아니에요."
+                  aria-pressed="false"
+                >
+                  timeout이 나면 registry의 모든 요청이 즉시 삭제되기 때문
+                </button>
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="correct"
+                  data-explanation="호출자는 기다리기를 포기해도 이미 보낸 요청은 queue에 남을 수 있고, retry가 새 요청을 더했어요."
+                  aria-pressed="false"
+                >
+                  이전 요청이 남은 상태에서 retry 요청까지 추가될 수 있기 때문
+                </button>
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="wrong"
+                  data-explanation="문제는 ring의 방향이 아니라 처리 가능한 양보다 많은 요청과 retry가 몰린 것이었어요."
+                  aria-pressed="false"
+                >
+                  consistent hash ring이 반대 방향으로 돌았기 때문
+                </button>
+              </div>
+              <p class="question-feedback" aria-live="polite"></p>
+            </div>
+
+            <div class="quiz-question">
+              <h3>5. semaphore를 둔 가장 중요한 목적은 무엇인가요?</h3>
+              <div class="quiz-options">
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="correct"
+                  data-explanation="감당할 수 없는 요청을 입구에서 제한해 queue와 메모리가 회복 불가능하게 커지는 것을 막았어요."
+                  aria-pressed="false"
+                >
+                  동시에 들어오는 요청 수를 제한해 overload를 막는다
+                </button>
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="wrong"
+                  data-explanation="semaphore는 ring 배치 규칙을 바꾸지 않고, 뒤 단계에 들어가는 동시 요청 수를 제한했어요."
+                  aria-pressed="false"
+                >
+                  consistent hashing 알고리즘을 새로 계산한다
+                </button>
+                <button
+                  class="quiz-option"
+                  type="button"
+                  data-quiz-answer="wrong"
+                  data-explanation="모든 요청을 무조건 기다리게 하면 queue가 더 커질 수 있어요. 이 사례는 빠른 실패로 시스템을 보호했어요."
+                  aria-pressed="false"
+                >
+                  실패할 요청도 모두 성공할 때까지 무한히 기다리게 한다
+                </button>
+              </div>
+              <p class="question-feedback" aria-live="polite"></p>
+            </div>
+          </div>
+
+          <p id="quiz-feedback">
+            아직 답을 고르지 않았어요. 위에서 한 문제를 골라 보세요.
+          </p>
+        </section>
+
+        <section
+          class="lesson-section section-card"
+          id="source"
+          aria-labelledby="source-title"
+        >
+          <div class="label-row">
+            <span class="evidence-label evidence-label--fact">실제 사실</span>
+            <span class="evidence-label evidence-label--caution">주의</span>
+          </div>
+          <p class="chapter-number">12. 공식 원문</p>
+          <h2 id="source-title">더 궁금하면 원문을 읽어 보세요</h2>
+          <div class="source-card">
+            <div>
+              <h3>How Discord Scaled Elixir to 5,000,000 Concurrent Users</h3>
+              <p class="source-meta">
+                <span>작성자: Stanislav Vishnevskiy</span>
+                <span>공개일: <time datetime="2017-07-06">2017-07-06</time></span>
+                <span>자료 종류: Discord Engineering 공식 글</span>
+              </p>
+            </div>
+            <a
+              href="https://discord.com/blog/how-discord-scaled-elixir-to-5-000-000-concurrent-users"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              Discord 공식 원문 새 창에서 열기
+            </a>
+            <p class="note note--caution">
+              이 페이지는 공식 글의 <span class="nowrap">ring lookup</span>, FastGlobal,
+              <span class="nowrap">Limited Concurrency</span> 부분을 학습용으로 단순화했습니다.
+              2017년 당시의 역사적 사례이며, 현재 Discord
+              아키텍처를 설명하거나 모든 분산 시스템에 같은 해결책을 권하는
+              자료가 아닙니다.
+            </p>
+          </div>
+        </section>
+      </article>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <p>
+          기억해요: 안정 해시는 길을 정하는 규칙이고, Discord 사례의 핵심은
+          그 길을 읽는 방법을 바꾼 데 있습니다.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      (() => {
+        const toggle = document.getElementById("real-system-toggle");
+        const panel = document.getElementById("real-system-panel");
+        const globalFeedback = document.getElementById("quiz-feedback");
+
+        const togglePanel = () => {
+          const isExpanded = toggle.getAttribute("aria-expanded") === "true";
+          toggle.setAttribute("aria-expanded", String(!isExpanded));
+          panel.hidden = isExpanded;
+          toggle.textContent = isExpanded
+            ? "실제 요청 경로 펼쳐 보기"
+            : "실제 요청 경로 접기";
+        };
+
+        toggle.addEventListener("click", togglePanel);
+        toggle.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            togglePanel();
+          }
+        });
+
+        document.querySelectorAll(".quiz-option").forEach((option) => {
+          option.addEventListener("click", () => {
+            const question = option.closest(".quiz-question");
+            const options = question.querySelectorAll(".quiz-option");
+            const localFeedback = question.querySelector(".question-feedback");
+            const isCorrect = option.dataset.quizAnswer === "correct";
+            const explanation = option.dataset.explanation;
+
+            options.forEach((candidate) => {
+              candidate.disabled = true;
+              candidate.setAttribute(
+                "aria-pressed",
+                String(candidate === option),
+              );
+              if (candidate === option) {
+                candidate.dataset.state = isCorrect ? "correct" : "wrong";
+              }
+            });
+
+            const message = isCorrect
+              ? `정답! ${explanation}`
+              : `아쉬워요. ${explanation}`;
+
+            localFeedback.textContent = message;
+            globalFeedback.textContent = message;
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
