@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="820" viewBox="0 0 1600 820" role="img" aria-labelledby="title desc">
+  <title id="title">알림 발송 처리 흐름</title>
+  <desc id="desc">사건 커밋부터 정책 검사와 외부 제공자 발송까지의 순서</desc>
+  <defs>
+    <filter id="s" x="-15%" y="-15%" width="130%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#172033" flood-opacity=".12"/></filter>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 10 5 0 10z" fill="#536277"/></marker>
+    <style>text{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;fill:#172033}.t{font-size:40px;font-weight:800}.sub{font-size:19px;fill:#667085}.h{font-size:20px;font-weight:800}.b{font-size:15px;fill:#536277}.n{font-size:18px;font-weight:800;fill:white}.line{stroke:#536277;stroke-width:3;fill:none;marker-end:url(#a)}</style>
+  </defs>
+  <rect width="1600" height="820" fill="#f7f9fc"/>
+  <text x="70" y="70" class="t">알림 한 건의 처리 흐름</text>
+  <text x="70" y="108" class="sub">접수 시 조기 필터와 발송 직전 최종 필터를 분리한다.</text>
+
+  <g filter="url(#s)">
+    <rect x="70" y="180" width="235" height="145" rx="20" fill="white" stroke="#b9d2ff"/>
+    <circle cx="103" cy="210" r="19" fill="#3478f6"/><text x="103" y="217" text-anchor="middle" class="n">1</text>
+    <text x="187" y="222" text-anchor="middle" class="h">사건 + Outbox</text>
+    <text x="187" y="260" text-anchor="middle" class="b">업무 변경과 발행 의도를</text><text x="187" y="285" text-anchor="middle" class="b">한 트랜잭션으로 커밋</text>
+
+    <rect x="365" y="180" width="235" height="145" rx="20" fill="white" stroke="#b9d2ff"/>
+    <circle cx="398" cy="210" r="19" fill="#3478f6"/><text x="398" y="217" text-anchor="middle" class="n">2</text>
+    <text x="482" y="222" text-anchor="middle" class="h">Relay → Broker</text>
+    <text x="482" y="260" text-anchor="middle" class="b">커밋된 사건 발행</text><text x="482" y="285" text-anchor="middle" class="b">실패 시 다시 시도</text>
+
+    <rect x="660" y="180" width="235" height="145" rx="20" fill="white" stroke="#b9e6d3"/>
+    <circle cx="693" cy="210" r="19" fill="#18a66a"/><text x="693" y="217" text-anchor="middle" class="n">3</text>
+    <text x="777" y="222" text-anchor="middle" class="h">멱등 접수</text>
+    <text x="777" y="260" text-anchor="middle" class="b">eventId UNIQUE 등록</text><text x="777" y="285" text-anchor="middle" class="b">중복이면 ACK 후 종료</text>
+
+    <rect x="955" y="180" width="235" height="145" rx="20" fill="white" stroke="#b9e6d3"/>
+    <circle cx="988" cy="210" r="19" fill="#18a66a"/><text x="988" y="217" text-anchor="middle" class="n">4</text>
+    <text x="1072" y="222" text-anchor="middle" class="h">조기 정책 검사</text>
+    <text x="1072" y="260" text-anchor="middle" class="b">사용자 · 설정 · 기기</text><text x="1072" y="285" text-anchor="middle" class="b">채널 · 우선순위 결정</text>
+
+    <rect x="1250" y="180" width="280" height="145" rx="20" fill="white" stroke="#f2d39a"/>
+    <circle cx="1283" cy="210" r="19" fill="#e79a17"/><text x="1283" y="217" text-anchor="middle" class="n">5</text>
+    <text x="1390" y="222" text-anchor="middle" class="h">채널별 Queue</text>
+    <text x="1390" y="260" text-anchor="middle" class="b">Push · SMS · Email 분리</text><text x="1390" y="285" text-anchor="middle" class="b">피크 흡수와 장애 격리</text>
+  </g>
+  <path class="line" d="M305 252 H365"/><path class="line" d="M600 252 H660"/><path class="line" d="M895 252 H955"/><path class="line" d="M1190 252 H1250"/>
+
+  <path class="line" d="M1390 325 V390 H225 V455"/>
+  <g filter="url(#s)">
+    <rect x="70" y="455" width="310" height="170" rx="20" fill="white" stroke="#f2d39a"/>
+    <circle cx="105" cy="487" r="19" fill="#e79a17"/><text x="105" y="494" text-anchor="middle" class="n">6</text>
+    <text x="225" y="500" text-anchor="middle" class="h">발송 직전 최종 검사</text>
+    <text x="225" y="538" text-anchor="middle" class="b">최신 동의 · 방해 금지 · 빈도 제한</text>
+    <rect x="100" y="565" width="105" height="36" rx="18" fill="#e7f7ef"/><text x="152" y="589" text-anchor="middle" class="b">허용</text>
+    <rect x="245" y="565" width="105" height="36" rx="18" fill="#fff0ee"/><text x="297" y="589" text-anchor="middle" class="b">거부 → SKIPPED</text>
+
+    <rect x="460" y="455" width="310" height="170" rx="20" fill="white" stroke="#f2d39a"/>
+    <circle cx="495" cy="487" r="19" fill="#e79a17"/><text x="495" y="494" text-anchor="middle" class="n">7</text>
+    <text x="615" y="500" text-anchor="middle" class="h">템플릿 렌더링</text>
+    <text x="615" y="538" text-anchor="middle" class="b">사건 데이터 + 언어 + 채널</text>
+    <text x="615" y="570" text-anchor="middle" class="b">제공자 규격으로 변환</text>
+
+    <rect x="850" y="455" width="310" height="170" rx="20" fill="white" stroke="#dac3f5"/>
+    <circle cx="885" cy="487" r="19" fill="#8b5fc5"/><text x="885" y="494" text-anchor="middle" class="n">8</text>
+    <text x="1005" y="500" text-anchor="middle" class="h">외부 제공자 호출</text>
+    <text x="1005" y="538" text-anchor="middle" class="b">APNs · FCM · SMS · Email</text>
+    <text x="1005" y="570" text-anchor="middle" class="b">requestId와 응답 기록</text>
+
+    <rect x="1240" y="455" width="290" height="170" rx="20" fill="white" stroke="#dac3f5"/>
+    <circle cx="1275" cy="487" r="19" fill="#8b5fc5"/><text x="1275" y="494" text-anchor="middle" class="n">9</text>
+    <text x="1385" y="500" text-anchor="middle" class="h">피드백 반영</text>
+    <text x="1385" y="538" text-anchor="middle" class="b">제공자 수락 ≠ 단말 전달</text>
+    <text x="1385" y="570" text-anchor="middle" class="b">전달 · 열람 상태 별도 기록</text>
+  </g>
+  <path class="line" d="M380 540 H460"/><path class="line" d="M770 540 H850"/><path class="line" d="M1160 540 H1240"/>
+
+  <rect x="70" y="690" width="1460" height="70" rx="18" fill="#edf2f8"/>
+  <text x="800" y="720" text-anchor="middle" class="h">정책 경계</text>
+  <text x="800" y="748" text-anchor="middle" class="b">접수 검사는 불필요한 작업을 줄이고, 발송 직전 검사는 큐 대기 중 바뀐 최신 사용자 의사를 지킨다.</text>
+</svg>

@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040" role="img" aria-labelledby="title desc">
+  <title id="title">알림 시스템 전체 아키텍처</title>
+  <desc id="desc">사건 생산, 접수와 정책, 채널별 처리, 외부 전달과 피드백의 네 계층</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#172033" flood-opacity=".12"/></filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#526077"/></marker>
+    <style>
+      text{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;fill:#172033}
+      .title{font-size:42px;font-weight:800}.subtitle{font-size:20px;fill:#667085}.lane-title{font-size:24px;font-weight:800}.node-title{font-size:20px;font-weight:750}.body{font-size:16px;fill:#526077}.small{font-size:14px;fill:#667085}.line{stroke:#526077;stroke-width:3;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1600" height="1040" fill="#f6f8fc"/>
+  <text x="70" y="70" class="title">Ch.10 알림 시스템 전체 아키텍처</text>
+  <text x="70" y="108" class="subtitle">사건의 사실 → 정책 결정 → 채널별 비동기 처리 → 제공자 전달과 피드백</text>
+
+  <rect x="55" y="145" width="330" height="825" rx="26" fill="#edf4ff" stroke="#b9d2ff"/>
+  <rect x="405" y="145" width="410" height="825" rx="26" fill="#eefaf5" stroke="#b9e6d3"/>
+  <rect x="835" y="145" width="370" height="825" rx="26" fill="#fff7e8" stroke="#f2d39a"/>
+  <rect x="1225" y="145" width="320" height="825" rx="26" fill="#f7f0ff" stroke="#dac3f5"/>
+
+  <circle cx="95" cy="192" r="22" fill="#3478f6"/><text x="95" y="200" text-anchor="middle" fill="white" font-size="20" font-weight="800">1</text>
+  <text x="132" y="200" class="lane-title">사건 생산</text>
+  <circle cx="445" cy="192" r="22" fill="#18a66a"/><text x="445" y="200" text-anchor="middle" fill="white" font-size="20" font-weight="800">2</text>
+  <text x="482" y="200" class="lane-title">접수와 정책</text>
+  <circle cx="875" cy="192" r="22" fill="#e79a17"/><text x="875" y="200" text-anchor="middle" fill="white" font-size="20" font-weight="800">3</text>
+  <text x="912" y="200" class="lane-title">채널별 처리</text>
+  <circle cx="1265" cy="192" r="22" fill="#8b5fc5"/><text x="1265" y="200" text-anchor="middle" fill="white" font-size="20" font-weight="800">4</text>
+  <text x="1302" y="200" class="lane-title">전달·피드백</text>
+
+  <g filter="url(#shadow)">
+    <rect x="90" y="250" width="260" height="110" rx="18" fill="white"/>
+    <text x="220" y="292" text-anchor="middle" class="node-title">도메인 서비스</text>
+    <text x="220" y="322" text-anchor="middle" class="body">주문 · 결제 · 보안 · 메시지</text>
+    <rect x="90" y="405" width="260" height="120" rx="18" fill="white"/>
+    <text x="220" y="448" text-anchor="middle" class="node-title">업무 DB + Outbox</text>
+    <text x="220" y="478" text-anchor="middle" class="body">한 로컬 트랜잭션으로 커밋</text>
+    <text x="220" y="505" text-anchor="middle" class="small">eventId · type · userId · data</text>
+    <rect x="90" y="575" width="260" height="110" rx="18" fill="white"/>
+    <text x="220" y="617" text-anchor="middle" class="node-title">Outbox Relay</text>
+    <text x="220" y="647" text-anchor="middle" class="body">커밋된 사건을 재발행</text>
+    <rect x="90" y="735" width="260" height="110" rx="18" fill="white"/>
+    <text x="220" y="777" text-anchor="middle" class="node-title">예약·캠페인</text>
+    <text x="220" y="807" text-anchor="middle" class="body">시간 분산 · 만료 · 우선순위</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="450" y="250" width="320" height="105" rx="18" fill="white"/>
+    <text x="610" y="291" text-anchor="middle" class="node-title">알림 접수 서비스</text>
+    <text x="610" y="321" text-anchor="middle" class="body">검증 · eventId 멱등성 · 작업 생성</text>
+    <rect x="450" y="400" width="150" height="120" rx="18" fill="white"/>
+    <text x="525" y="441" text-anchor="middle" class="node-title">사용자</text>
+    <text x="525" y="470" text-anchor="middle" class="body">설정 · 언어</text>
+    <text x="525" y="496" text-anchor="middle" class="body">시간대</text>
+    <rect x="620" y="400" width="150" height="120" rx="18" fill="white"/>
+    <text x="695" y="441" text-anchor="middle" class="node-title">기기</text>
+    <text x="695" y="470" text-anchor="middle" class="body">플랫폼</text>
+    <text x="695" y="496" text-anchor="middle" class="body">활성 토큰</text>
+    <rect x="450" y="565" width="150" height="120" rx="18" fill="white"/>
+    <text x="525" y="606" text-anchor="middle" class="node-title">템플릿</text>
+    <text x="525" y="635" text-anchor="middle" class="body">채널 · 언어</text>
+    <text x="525" y="661" text-anchor="middle" class="body">버전 관리</text>
+    <rect x="620" y="565" width="150" height="120" rx="18" fill="white"/>
+    <text x="695" y="606" text-anchor="middle" class="node-title">정책 엔진</text>
+    <text x="695" y="635" text-anchor="middle" class="body">동의 · 빈도</text>
+    <text x="695" y="661" text-anchor="middle" class="body">방해 금지</text>
+    <rect x="450" y="735" width="320" height="110" rx="18" fill="white"/>
+    <text x="610" y="777" text-anchor="middle" class="node-title">알림·작업 저장소</text>
+    <text x="610" y="807" text-anchor="middle" class="body">notification · task · 상태 전이</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="880" y="250" width="280" height="150" rx="20" fill="white" stroke="#72a7ff" stroke-width="2"/>
+    <text x="1020" y="292" text-anchor="middle" class="node-title">Push Queue</text>
+    <text x="1020" y="323" text-anchor="middle" class="body">APNs · FCM Worker</text>
+    <text x="1020" y="354" text-anchor="middle" class="small">기기 토큰 · payload · rate limit</text>
+    <rect x="880" y="445" width="280" height="150" rx="20" fill="white" stroke="#f0b84d" stroke-width="2"/>
+    <text x="1020" y="487" text-anchor="middle" class="node-title">SMS Queue</text>
+    <text x="1020" y="518" text-anchor="middle" class="body">SMS Worker</text>
+    <text x="1020" y="549" text-anchor="middle" class="small">전화번호 · 발신자 · provider quota</text>
+    <rect x="880" y="640" width="280" height="150" rx="20" fill="white" stroke="#8ad6b4" stroke-width="2"/>
+    <text x="1020" y="682" text-anchor="middle" class="node-title">Email Queue</text>
+    <text x="1020" y="713" text-anchor="middle" class="body">Email Worker</text>
+    <text x="1020" y="744" text-anchor="middle" class="small">주소 · 제목 · HTML/Text</text>
+    <rect x="880" y="835" width="280" height="85" rx="18" fill="#fff2d3"/>
+    <text x="1020" y="870" text-anchor="middle" class="node-title">Delay Queue · DLQ</text>
+    <text x="1020" y="897" text-anchor="middle" class="small">재시도 예약 · 반복 실패 격리</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1260" y="250" width="250" height="105" rx="18" fill="white"/>
+    <text x="1385" y="292" text-anchor="middle" class="node-title">APNs · FCM</text>
+    <text x="1385" y="322" text-anchor="middle" class="body">푸시 전달 채널</text>
+    <rect x="1260" y="410" width="250" height="105" rx="18" fill="white"/>
+    <text x="1385" y="452" text-anchor="middle" class="node-title">SMS Provider</text>
+    <text x="1385" y="482" text-anchor="middle" class="body">통신사 연동</text>
+    <rect x="1260" y="570" width="250" height="105" rx="18" fill="white"/>
+    <text x="1385" y="612" text-anchor="middle" class="node-title">Email Provider</text>
+    <text x="1385" y="642" text-anchor="middle" class="body">메일 서버 연동</text>
+    <rect x="1260" y="730" width="250" height="115" rx="18" fill="white"/>
+    <text x="1385" y="770" text-anchor="middle" class="node-title">사용자 단말·앱</text>
+    <text x="1385" y="800" text-anchor="middle" class="body">전달 · 표시 · 열람</text>
+    <rect x="1260" y="880" width="250" height="60" rx="18" fill="#efe4ff"/>
+    <text x="1385" y="918" text-anchor="middle" class="body">콜백 · 클라이언트 이벤트</text>
+  </g>
+
+  <path class="line" d="M220 360 V405"/><path class="line" d="M220 525 V575"/>
+  <path class="line" d="M350 630 H410 Q430 630 430 610 V325 Q430 302 450 302"/>
+  <path class="line" d="M350 790 H395 Q415 790 415 770 V350 Q415 325 450 325"/>
+  <path class="line" d="M610 355 V380"/><path class="line" d="M525 520 V565"/><path class="line" d="M695 520 V565"/>
+  <path class="line" d="M770 302 H845 Q860 302 860 325 H880"/>
+  <path class="line" d="M770 325 H830 Q850 325 850 520 H880"/>
+  <path class="line" d="M770 345 H815 Q840 345 840 715 H880"/>
+  <path class="line" d="M1160 325 H1260"/><path class="line" d="M1160 520 H1260"/><path class="line" d="M1160 715 H1235 Q1245 715 1245 623 H1260"/>
+  <path class="line" d="M1385 355 H1530 V765 H1510"/>
+  <path class="line" d="M1260 462 H1238 V785 H1260"/>
+  <path class="line" d="M1385 675 V730"/>
+  <path class="line" d="M1385 845 V880"/>
+  <path d="M1260 910 H810 Q790 910 790 890 V790 H770" fill="none" stroke="#8b5fc5" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <rect x="55" y="990" width="1490" height="1" fill="#d7deea"/>
+  <text x="800" y="1020" text-anchor="middle" class="small">핵심 경계: 생산자는 사건의 사실을 전달하고, 알림 시스템은 정책을 결정하며, 제공자는 실제 전달을 담당한다.</text>
+</svg>

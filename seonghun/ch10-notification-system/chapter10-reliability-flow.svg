@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" role="img" aria-labelledby="title desc">
+  <title id="title">알림 신뢰성 및 상태 흐름</title>
+  <desc id="desc">정상 상태와 정책 종료, 재시도, 영구 실패 및 DLQ 분기</desc>
+  <defs>
+    <filter id="s" x="-15%" y="-15%" width="130%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#172033" flood-opacity=".12"/></filter>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 10 5 0 10z" fill="#536277"/></marker>
+    <style>text{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;fill:#172033}.t{font-size:40px;font-weight:800}.sub{font-size:19px;fill:#667085}.h{font-size:19px;font-weight:800}.b{font-size:15px;fill:#536277}.line{stroke:#536277;stroke-width:3;fill:none;marker-end:url(#a)}.dash{stroke:#8b5fc5;stroke-width:3;stroke-dasharray:9 7;fill:none;marker-end:url(#a)}</style>
+  </defs>
+  <rect width="1600" height="980" fill="#f7f9fc"/>
+  <text x="70" y="70" class="t">상태와 실패 처리 경계</text>
+  <text x="70" y="108" class="sub">외부 제공자 수락, 단말 전달, 사용자 열람을 하나의 성공 상태로 합치지 않는다.</text>
+
+  <text x="70" y="170" class="h">정상 경로</text>
+  <g filter="url(#s)">
+    <rect x="70" y="205" width="200" height="100" rx="20" fill="#eaf2ff" stroke="#9dc0ff"/>
+    <text x="170" y="247" text-anchor="middle" class="h">RECEIVED</text><text x="170" y="276" text-anchor="middle" class="b">멱등 접수 완료</text>
+    <rect x="330" y="205" width="200" height="100" rx="20" fill="#eaf2ff" stroke="#9dc0ff"/>
+    <text x="430" y="247" text-anchor="middle" class="h">QUEUED</text><text x="430" y="276" text-anchor="middle" class="b">내구성 있는 큐 저장</text>
+    <rect x="590" y="205" width="200" height="100" rx="20" fill="#fff4df" stroke="#efc56f"/>
+    <text x="690" y="247" text-anchor="middle" class="h">PROCESSING</text><text x="690" y="276" text-anchor="middle" class="b">작업자 처리 중</text>
+    <rect x="850" y="205" width="230" height="100" rx="20" fill="#f2eaff" stroke="#cdb2ee"/>
+    <text x="965" y="247" text-anchor="middle" class="h">PROVIDER_ACCEPTED</text><text x="965" y="276" text-anchor="middle" class="b">제공자가 요청 수락</text>
+    <rect x="1140" y="205" width="180" height="100" rx="20" fill="#e8f8f0" stroke="#8bd4b2"/>
+    <text x="1230" y="247" text-anchor="middle" class="h">DELIVERED</text><text x="1230" y="276" text-anchor="middle" class="b">단말 전달 확인</text>
+    <rect x="1380" y="205" width="150" height="100" rx="20" fill="#e8f8f0" stroke="#8bd4b2"/>
+    <text x="1455" y="247" text-anchor="middle" class="h">OPENED</text><text x="1455" y="276" text-anchor="middle" class="b">사용자 열람</text>
+  </g>
+  <path class="line" d="M270 255 H330"/><path class="line" d="M530 255 H590"/><path class="line" d="M790 255 H850"/><path class="dash" d="M1080 255 H1140"/><path class="dash" d="M1320 255 H1380"/>
+  <text x="1110" y="230" text-anchor="middle" class="b">피드백 가능 시</text><text x="1350" y="230" text-anchor="middle" class="b">앱 이벤트</text>
+
+  <text x="70" y="390" class="h">PROCESSING에서의 분기</text>
+  <g filter="url(#s)">
+    <rect x="70" y="430" width="310" height="145" rx="22" fill="#eefaf5" stroke="#9edbbf"/>
+    <text x="225" y="472" text-anchor="middle" class="h">정책상 보내지 않음</text>
+    <text x="225" y="505" text-anchor="middle" class="b">수신 거부 · 만료 · 빈도 제한</text>
+    <rect x="135" y="525" width="180" height="34" rx="17" fill="#dff4e9"/><text x="225" y="548" text-anchor="middle" class="b">SKIPPED + ACK</text>
+
+    <rect x="450" y="430" width="310" height="145" rx="22" fill="#fff7e8" stroke="#efc56f"/>
+    <text x="605" y="472" text-anchor="middle" class="h">재시도 가능한 실패</text>
+    <text x="605" y="505" text-anchor="middle" class="b">429 · 5xx · 연결 오류</text>
+    <rect x="505" y="525" width="200" height="34" rx="17" fill="#ffedc9"/><text x="605" y="548" text-anchor="middle" class="b">RETRY_SCHEDULED</text>
+
+    <rect x="830" y="430" width="310" height="145" rx="22" fill="#fff0ee" stroke="#eaa59c"/>
+    <text x="985" y="472" text-anchor="middle" class="h">영구 실패</text>
+    <text x="985" y="505" text-anchor="middle" class="b">잘못된 요청 · 인증 · 무효 목적지</text>
+    <rect x="910" y="525" width="150" height="34" rx="17" fill="#ffe1dd"/><text x="985" y="548" text-anchor="middle" class="b">FAILED</text>
+
+    <rect x="1210" y="430" width="320" height="145" rx="22" fill="#f3edfa" stroke="#cdb2ee"/>
+    <text x="1370" y="472" text-anchor="middle" class="h">결과가 모호한 실패</text>
+    <text x="1370" y="505" text-anchor="middle" class="b">타임아웃: 제공자 수락 여부 불명</text>
+    <rect x="1270" y="525" width="200" height="34" rx="17" fill="#e9dcf8"/><text x="1370" y="548" text-anchor="middle" class="b">멱등성 고려 후 판단</text>
+  </g>
+  <path class="line" d="M690 305 V370 H225 V430"/><path class="line" d="M690 305 V430"/><path class="line" d="M690 370 H985 V430"/><path class="line" d="M690 350 H1370 V430"/>
+
+  <g filter="url(#s)">
+    <rect x="450" y="670" width="310" height="165" rx="22" fill="white" stroke="#efc56f"/>
+    <text x="605" y="713" text-anchor="middle" class="h">Delay Queue</text>
+    <text x="605" y="746" text-anchor="middle" class="b">Retry-After 우선</text>
+    <text x="605" y="773" text-anchor="middle" class="b">지수 백오프 + 지터</text>
+    <text x="605" y="800" text-anchor="middle" class="b">다음 실행 시각까지 보관</text>
+    <rect x="830" y="670" width="310" height="165" rx="22" fill="white" stroke="#eaa59c"/>
+    <text x="985" y="713" text-anchor="middle" class="h">재시도 한도 검사</text>
+    <text x="985" y="746" text-anchor="middle" class="b">최대 횟수 · 만료 시각</text>
+    <text x="985" y="773" text-anchor="middle" class="b">오류 분류 재확인</text>
+    <text x="985" y="800" text-anchor="middle" class="b">허용되면 큐로 복귀</text>
+    <rect x="1210" y="670" width="320" height="165" rx="22" fill="white" stroke="#cdb2ee"/>
+    <text x="1370" y="713" text-anchor="middle" class="h">DLQ</text>
+    <text x="1370" y="746" text-anchor="middle" class="b">반복 실패 작업 격리</text>
+    <text x="1370" y="773" text-anchor="middle" class="b">운영자 분석 · 수정 · 선택 재처리</text>
+    <text x="1370" y="800" text-anchor="middle" class="b">자동 무한 재투입 금지</text>
+  </g>
+  <path class="line" d="M605 575 V670"/><path class="line" d="M760 752 H830"/><path class="line" d="M1140 752 H1210"/>
+  <path d="M985 670 V625 Q985 610 970 610 H805 Q790 610 790 595 V310" fill="none" stroke="#18a66a" stroke-width="3" marker-end="url(#a)"/>
+  <text x="877" y="604" text-anchor="middle" class="b">한도 내 재시도</text>
+  <text x="1175" y="738" text-anchor="middle" class="b">한도 초과</text>
+
+  <rect x="70" y="890" width="1460" height="55" rx="16" fill="#edf2f8"/>
+  <text x="800" y="924" text-anchor="middle" class="b">제공자 수락은 내부 발송 요청의 성공일 뿐이다. 단말 전달과 사용자 열람은 확인 가능한 경우에만 별도 상태로 기록한다.</text>
+</svg>
