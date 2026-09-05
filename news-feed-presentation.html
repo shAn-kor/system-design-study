@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="가상 면접 사례로 배우는 대규모 시스템 설계 기초 11장의 뉴스 피드 개념을 실제 Pull, Push, Hybrid 구현과 실험으로 연결한 발표 자료">
+  <title>뉴스 피드 설계: 책의 개념을 실험으로 검증하기</title>
+  <link rel="stylesheet" href="news-feed-presentation.css">
+</head>
+<body>
+  <a class="skip-link" href="#slide-1">발표 시작으로 이동</a>
+  <header class="deck-bar" aria-label="발표 도구"><strong>News Feed Design Study</strong><span><kbd>←</kbd><kbd>→</kbd> 이동 · <kbd>N</kbd> 발표 메모</span><span id="progress-label" aria-live="polite">1 / 19</span></header>
+  <main class="deck" id="deck">
+    <section class="slide cover" id="slide-1" data-slide="1" aria-labelledby="title-1">
+      <div class="slide-inner cover-grid">
+        <div><p class="deck-context">책 11장 × 실행 가능한 로컬 실험</p><h1 id="title-1">뉴스 피드는<br>언제 만들어야 할까?</h1><p class="subtitle">Pull, 비동기 Push, Hybrid를 설계하고 같은 조건에서 측정했다</p></div>
+        <div class="cover-thesis"><span>이 장의 진짜 질문</span><strong>비용을 쓰기에 둘까,<br>읽기에 둘까</strong><p>지연 시간만이 아니라 저장 증폭, 일관성, 복구 비용까지 함께 본다.</p></div>
+        <footer>Go · PostgreSQL · Redis · Redpanda</footer>
+      </div>
+      <aside class="notes">11장은 제품 기능보다 비용 배치의 문제를 가르친다. 발표는 책의 논리를 먼저 세우고, 같은 논리가 실제 코드와 수치에서 어떻게 드러났는지 연결한다.</aside>
+    </section>
+
+    <section class="slide" id="slide-2" data-slide="2" aria-labelledby="title-2">
+      <div class="slide-inner"><div class="slide-meta"><span>설계 전개</span><span>01</span></div><h2 id="title-2">정답을 먼저 말하지 않고 병목을 따라간다</h2>
+        <ol class="reasoning-chain"><li><b>요구사항</b><span>최신순 피드, 최대 5천 관계</span></li><li><b>단순 Pull</b><span>친구 글을 조회 시점에 조합</span></li><li class="problem"><b>읽기 병목</b><span>후보 집합과 정렬 비용 증가</span></li><li><b>비동기 Push</b><span>피드 인덱스를 미리 계산</span></li><li class="problem"><b>쓰기 증폭</b><span>대형 계정의 팔로워 수만큼 쓰기</span></li><li><b>Hybrid</b><span>일반 계정 Push, 대형 계정 Pull</span></li></ol>
+        <p class="stage-line"><strong>면접의 평가 대상</strong> 기술 이름보다 “왜 다음 구조가 필요해졌는가”를 설명하는 흐름</p><p class="source">책의 권장 전개를 프로젝트의 구현 순서와 연결</p>
+      </div><aside class="notes">Kafka나 Redis로 시작하지 않는다. 가장 단순한 해법이 언제 깨지는지 보여주고, 그 비용을 다른 시점으로 옮기는 식으로 설계를 발전시킨다.</aside>
+    </section>
+
+    <section class="slide" id="slide-3" data-slide="3" aria-labelledby="title-3">
+      <div class="slide-inner"><div class="slide-meta"><span>요구사항</span><span>02</span></div><h2 id="title-3">먼저 “뉴스 피드”의 범위를 고정한다</h2>
+        <div class="requirements-layout"><div class="requirements-primary"><p><span>사용자 규모</span><strong>DAU 1,000만</strong></p><p><span>관계 규모</span><strong>사용자당 최대 5,000명</strong></p><p><span>핵심 동작</span><strong>글 작성 · 친구 글 조회</strong></p><p><span>정렬</span><strong>역시간순</strong></p></div><div class="requirements-secondary"><h3>포함</h3><p>텍스트와 미디어 참조</p><p>웹·모바일 클라이언트</p><p>커서 기반 페이지네이션</p><h3>이번 실험에서 제외</h3><p>추천 랭킹 · 광고 · 댓글 집계</p><p>다중 리전 · 운영 SLO 산정</p></div></div><p class="source">책의 가정 + docs/requirements.md</p>
+      </div><aside class="notes">역시간순으로 범위를 제한하면 핵심 문제는 후보 수집과 정렬이 된다. 추천 랭킹까지 포함하면 별도의 feature pipeline과 온라인 랭킹 계층이 필요해져 논점이 흐려진다.</aside>
+    </section>
+
+    <section class="slide" id="slide-4" data-slide="4" aria-labelledby="title-4">
+      <div class="slide-inner"><div class="slide-meta"><span>규모 추정</span><span>03</span></div><h2 id="title-4">숫자가 없으면 먼저 식을 세운다</h2>
+        <div class="sizing-grid"><div><span>평균 쓰기 QPS</span><code>DAU × 일일 작성 수 ÷ 86,400</code><small>피크 배수와 미디어 업로드는 별도</small></div><div><span>평균 읽기 QPS</span><code>DAU × 일일 피드 조회 수 ÷ 86,400</code><small>보통 쓰기보다 읽기가 훨씬 많다</small></div><div><span>Push 투영량</span><code>게시물 수 × 활성 팔로워 수</code><small>전체 팔로워가 아닌 실제 전달 대상</small></div><div><span>피드 저장량</span><code>사용자 수 × 보관 항목 × 참조 크기</code><small>본문 복사 여부가 비용을 크게 바꾼다</small></div></div>
+        <p class="callout"><strong>핵심 확인 질문</strong> 하루 작성·조회 횟수, 피크 배수, 허용 노출 지연, 보관할 피드 길이</p><p class="source">주어진 수치에 없는 가정은 임의로 채우지 않고 면접관과 합의</p>
+      </div><aside class="notes">DAU만으로 서버 수를 계산할 수 없다. 읽기·쓰기 빈도와 피크 배수가 필요하다. 여기서는 수치 예측보다 어떤 변수가 Pull과 Push의 경계를 바꾸는지 드러내는 데 집중한다.</aside>
+    </section>
+
+    <section class="slide" id="slide-5" data-slide="5" aria-labelledby="title-5">
+      <div class="slide-inner"><div class="slide-meta"><span>API와 데이터</span><span>04</span></div><h2 id="title-5">외부 API는 단순하고, 내부 책임은 분리한다</h2>
+        <div class="api-layout"><div class="api-samples"><div><code>POST /v1/posts</code><pre>{
+  "content": "hello",
+  "media_ids": ["img_123"]
+}</pre></div><div><code>GET /v1/feed?cursor=…&amp;limit=20</code><pre>{
+  "items": [...],
+  "next_cursor": "…"
+}</pre></div></div><div class="data-responsibility"><p><strong>posts</strong><span>게시물 원본</span></p><p><strong>follows</strong><span>현재 관계의 원본</span></p><p><strong>outbox</strong><span>발행할 이벤트</span></p><p><strong>feed:user</strong><span>재생성 가능한 post_id 인덱스</span></p><p><strong>object storage</strong><span>이미지·동영상 바이트</span></p></div></div><p class="source">docs/api.md, docs/schema.md, docs/design.md</p>
+      </div><aside class="notes">API 표면은 POST와 GET 두 개로 설명할 수 있다. 내부에서는 원본, 관계, 이벤트, 피드 투영을 분리해야 변경과 복구가 가능하다. 미디어 바이트는 DB가 아니라 객체 저장소와 CDN으로 전달한다.</aside>
+    </section>
+
+    <section class="slide" id="slide-6" data-slide="6" aria-labelledby="title-6">
+      <div class="slide-inner"><div class="slide-meta"><span>가장 단순한 해법</span><span>05</span></div><h2 id="title-6">Pull: 읽는 순간 친구들의 글을 모은다</h2>
+        <div class="pull-flow"><b>Feed 요청</b><i>→</i><b>친구 ID 조회</b><i>→</i><b>posts 필터</b><i>→</i><b>정렬·20개</b></div><pre class="sql"><code>SELECT p.*
+FROM posts p
+JOIN follows f ON f.followee_id = p.user_id
+WHERE f.follower_id = :viewer
+  AND (p.created_at, p.id) &lt; (:ts, :id)
+ORDER BY p.created_at DESC, p.id DESC
+LIMIT 20;</code></pre><div class="tradeoff-line"><span><b>쓰기</b> posts에 한 번 저장</span><span><b>읽기</b> 관계 조인 + 후보 정렬</span></div><p class="source">책의 Fan-out on Read · 프로젝트 Pull baseline</p>
+      </div><aside class="notes">작은 서비스라면 충분히 좋은 출발점이다. 새 글을 원본 DB에 한 번 쓰면 끝이고, 항상 최신 관계를 반영한다. 문제는 반환 20개보다 훨씬 많은 후보를 매 요청마다 찾아야 한다는 점이다.</aside>
+    </section>
+
+    <section class="slide" id="slide-7" data-slide="7" aria-labelledby="title-7">
+      <div class="slide-inner"><div class="slide-meta"><span>Pull 병목 검증</span><span>06</span></div><h2 id="title-7">LIMIT 20이어도 앞단의 후보 비용은 사라지지 않는다</h2>
+        <div class="chart-layout"><div class="bars" role="img" aria-label="팔로잉 수별 Pull 피드 p95: 100명 13.80밀리초, 1000명 38.88밀리초, 5000명 120.06밀리초"><div class="bar-row"><span>100명</span><span class="bar-fill" style="--bar:11.5%">&#160;</span><strong>13.80ms</strong></div><div class="bar-row"><span>1,000명</span><span class="bar-fill" style="--bar:32.4%">&#160;</span><strong>38.88ms</strong></div><div class="bar-row"><span>5,000명</span><span class="bar-fill" style="--bar:100%">&#160;</span><strong>120.06ms</strong></div></div><div class="evidence-copy"><strong class="number">50×</strong><p>팔로잉 100 → 5,000명</p><p>게시물 후보 2,000 → 100,000개</p><p class="takeaway">p95는 8.7배 증가</p></div></div><p class="callout"><strong>관찰</strong> Pull 비용은 최종 반환 개수보다 “검색해야 할 후보 집합”에 가깝게 움직였다.</p><p class="source">10 req/s, 5초, 조건별 3회 중앙값 · experiments/01-pull-baseline.md</p>
+      </div><aside class="notes">EXPLAIN 결과에서도 buffer hit와 후보 행 수가 함께 증가했다. LIMIT은 정렬 이후의 반환량을 줄일 뿐, 그 20개를 찾기 위한 후보 생성 비용까지 없애지 못했다.</aside>
+    </section>
+
+    <section class="slide" id="slide-8" data-slide="8" aria-labelledby="title-8">
+      <div class="slide-inner"><div class="slide-meta"><span>비용 이동</span><span>07</span></div><h2 id="title-8">Push: 한 게시물 이벤트를 여러 피드로 펼친다</h2>
+        <div class="fanout-diagram"><div class="event-node"><span>A가 글 작성</span><strong>post 101</strong></div><div class="fanout-lines" aria-hidden="true"><i>&#160;</i><i>&#160;</i><i>&#160;</i><i>&#160;</i><i>&#160;</i></div><div class="feed-nodes"><span>feed:B</span><span>feed:C</span><span>feed:D</span><span>feed:E</span><span>feed:F</span></div></div><div class="cost-shift"><p><span>Fan-out on Read</span><strong>쓰기 쌈 · 읽기 비쌈</strong></p><p><span>Fan-out on Write</span><strong>쓰기 비쌈 · 읽기 쌈</strong></p></div><p class="source">책의 Push 모델을 프로젝트의 Redis projection으로 구현</p>
+      </div><aside class="notes">fan-out은 하나의 입력이 여러 대상으로 퍼지는 모양을 뜻한다. Push는 복잡성을 없앤 것이 아니라, 사용자가 기다리는 읽기 경로에서 게시물 작성 이후의 비동기 경로로 옮긴다.</aside>
+    </section>
+
+    <section class="slide" id="slide-9" data-slide="9" aria-labelledby="title-9">
+      <div class="slide-inner"><div class="slide-meta"><span>비동기 Push</span><span>08</span></div><h2 id="title-9">HTTP 요청은 fan-out 완료를 기다리지 않는다</h2>
+        <ol class="pipeline"><li><span>1</span><strong>Post service</strong><small>posts와 outbox를 같은 트랜잭션에 기록</small></li><li><span>2</span><strong>Outbox relay</strong><small>미발행 이벤트를 Redpanda에 전달</small></li><li><span>3</span><strong>Fan-out worker</strong><small>팔로워를 500명 단위로 조회</small></li><li><span>4</span><strong>Redis</strong><small>각 feed:user에 post_id 투영</small></li></ol><div class="latency-contract"><p><span>클라이언트가 기다리는 것</span><strong>원본 게시물 커밋</strong></p><p><span>백그라운드에서 수렴하는 것</span><strong>친구 피드 노출</strong></p></div><p class="source">internal/post/publishing.go · internal/outbox/relay.go · internal/fanout/processor.go</p>
+      </div><aside class="notes">DB 저장 뒤 큐 발행 전에 프로세스가 죽는 dual-write 구간을 피하려고 transactional outbox를 사용했다. 이 선택으로 즉시 일관성 대신 짧은 노출 지연을 허용한다.</aside>
+    </section>
+
+    <section class="slide projection-slide" id="slide-10" data-slide="10" aria-labelledby="title-10">
+      <div class="slide-inner"><div class="slide-meta"><span>핵심 오해 풀기</span><span>09</span></div><h2 id="title-10">글은 한 번 저장하고, 피드에는 “위치”만 저장한다</h2>
+        <div class="projection-layout"><div class="canonical-store"><span>사실의 원본</span><strong>PostgreSQL posts</strong><pre><code>post_101
+author_id: A
+content: "hello"
+media_key: img_123</code></pre></div><div class="reference-arrow"><span>post_id</span><b>→</b></div><div class="projection-store"><span>조회용 인덱스</span><strong>Redis feed:user</strong><pre><code>feed:B [post_101, …]
+feed:C [post_101, …]
+feed:D [post_101, …]</code></pre></div></div><div class="not-duplicate"><p><strong>도메인 데이터 복제</strong><span>본문·미디어·작성자를 N번 복사</span><b>하지 않음</b></p><p><strong>조회 인덱스 투영</strong><span>누구에게 어떤 post_id가 보이는지 저장</span><b>의도된 중복</b></p></div><p class="source">원본은 한 곳에, 읽기 최적화 인덱스는 사용자별로 · docs/design.md</p>
+      </div><aside class="notes">Redis 피드는 게시물의 또 다른 원본이 아니라 materialized view에 가깝다. 사라져도 PostgreSQL과 이벤트를 기준으로 재생성할 수 있고, 본문 수정도 모든 피드 엔트리를 갱신할 필요가 없다.</aside>
+    </section>
+
+    <section class="slide" id="slide-11" data-slide="11" aria-labelledby="title-11">
+      <div class="slide-inner"><div class="slide-meta"><span>Redis와 커서</span><span>10</span></div><h2 id="title-11">정렬 키 하나가 순서와 페이지 경계를 함께 책임진다</h2>
+        <div class="redis-layout"><div class="sorted-set"><div class="set-head"><span>feed:user_123</span><span>최신순</span></div><p><code>2026…|post_109</code><span>post_109</span></p><p><code>2026…|post_101</code><span>post_101</span></p><p class="cursor-cut"><code>cursor</code><span>(created_at, post_id)</span></p><p><code>2026…|post_096</code><span>post_096</span></p></div><div class="cursor-rules"><p><strong>결정적 순서</strong><span>같은 timestamp는 post_id로 tie-break</span></p><p><strong>exclusive 경계</strong><span>다음 페이지에서 마지막 항목 제외</span></p><p><strong>안정적 pagination</strong><span>앞에 새 글이 들어와도 중복·누락 최소화</span></p></div></div><p class="source">internal/feed/cursor.go · internal/feed/push_timeline.go</p>
+      </div><aside class="notes">이 구현은 Redis score를 0으로 두고 member의 사전식 순서를 사용한다. 커서는 타임스탬프만 쓰지 않고 post_id까지 포함해 동일 시각에 생성된 게시물도 안정적으로 나눈다.</aside>
+    </section>
+
+    <section class="slide" id="slide-12" data-slide="12" aria-labelledby="title-12">
+      <div class="slide-inner"><div class="slide-meta"><span>동일 부하 비교</span><span>11</span></div><h2 id="title-12">Push는 읽기를 절반으로 줄였지만 책임을 더 만들었다</h2>
+        <div class="comparison" role="img" aria-label="동일 부하에서 Pull 14.87밀리초, Push 7.16밀리초, Hybrid 7.85밀리초"><div class="strategy pull"><span>Pull</span><span class="column-fill" style="--height:100%">&#160;</span><strong>14.87ms</strong><small>관계 조인·정렬·hydrate</small></div><div class="strategy push"><span>Push</span><span class="column-fill" style="--height:48.2%">&#160;</span><strong>7.16ms</strong><small>projection + 20개 hydrate</small></div><div class="strategy hybrid"><span>Hybrid</span><span class="column-fill" style="--height:52.8%">&#160;</span><strong>7.85ms</strong><small>Push + 대형 작성자 merge</small></div></div><div class="tradeoff-line"><span><b>얻은 것</b> 조회 지연 감소</span><span><b>생긴 것</b> 큐 지연 · Redis 비용 · 재처리</span></div><p class="source">following 100명, posts 2,000개, 10 req/s, 5초 · experiments/06-strategy-read-comparison.md</p>
+      </div><aside class="notes">Push의 숫자만 보고 승리라고 결론내면 안 된다. 비교는 읽기 p95만 보여준다. 쓰기 증폭과 운영 복잡성은 다음 슬라이드에서 별도로 계산해야 한다.</aside>
+    </section>
+
+    <section class="slide" id="slide-13" data-slide="13" aria-labelledby="title-13">
+      <div class="slide-inner"><div class="slide-meta"><span>대형 계정 병목</span><span>12</span></div><h2 id="title-13">게시물 1개가 100,000번의 쓰기로 증폭됐다</h2>
+        <div class="amplification"><div class="post-event"><span>동기 구간</span><strong>POST 4.77ms</strong><small>원본 + outbox 커밋</small></div><div class="fanout-field"><span class="dot-cloud">&#160;</span><strong>100,000 writes</strong><small>fan-out 완료 756ms</small></div><div class="memory-result"><span>저장 결과</span><strong>약 12.24MB</strong><small>100,000 feed keys</small></div></div><p class="callout"><strong>숨은 병목</strong> API 응답이 빠르다고 fan-out 시스템이 싼 것은 아니다.</p><p class="source">Apple M4, Docker VM 2 CPU / 1.9GiB · experiments/03-celebrity-bottleneck.md</p>
+      </div><aside class="notes">유명인 사례가 Push의 경계를 드러낸다. 비동기화는 사용자의 대기 시간을 줄이지만 총 작업량을 없애지 않는다. 큐 적체, Redis 쓰기 처리량, 메모리 비용은 여전히 지불해야 한다.</aside>
+    </section>
+
+    <section class="slide" id="slide-14" data-slide="14" aria-labelledby="title-14">
+      <div class="slide-inner"><div class="slide-meta"><span>Hybrid</span><span>13</span></div><h2 id="title-14">대형 계정만 읽기 시점으로 되돌린다</h2>
+        <div class="hybrid-architecture"><div class="hybrid-source"><span>일반 작성자</span><strong>Push feed</strong><small>미리 투영된 post_id</small></div><div class="hybrid-source"><span>대형 작성자</span><strong>Pull posts</strong><small>읽을 때 최신 글 조회</small></div><div class="merge-engine"><span>Feed service</span><strong>merge · sort · dedupe</strong><small>(created_at, post_id) → top 20</small></div></div><div class="threshold-rule"><p><span>실험 임계값</span><strong>100,000 followers</strong></p><p><span>운영 임계값의 입력</span><strong>작성 빈도 × 활성 팔로워 × 비용</strong></p></div><p class="source">책의 Hybrid Fan-out · experiments/04-hybrid.md</p>
+      </div><aside class="notes">일반 계정은 Push의 빠른 읽기를 얻고, 대형 계정은 대규모 쓰기를 피한다. 10만은 프로젝트의 실험용 경계이지 보편적 정답이 아니다. 실제로는 활성 팔로워 비율과 작성 빈도로 동적으로 정해야 한다.</aside>
+    </section>
+
+    <section class="slide" id="slide-15" data-slide="15" aria-labelledby="title-15">
+      <div class="slide-inner"><div class="slide-meta"><span>Hybrid 최적화</span><span>14</span></div><h2 id="title-15">전략이 맞아도 쿼리 모양이 나쁘면 느리다</h2>
+        <div class="optimization-flow"><div class="bad-query"><span>초기 구현</span><strong>게시물마다 follower count</strong><code>correlated subquery</code></div><div class="metric-before"><span>p95</span><strong>31.68ms</strong></div><div class="rewrite-arrow"><b>→</b><span>대형 작성자 집합을 먼저 축소</span></div><div class="good-query"><span>개선 구현</span><strong>GROUP BY · HAVING 후 posts 조인</strong><code>candidate authors first</code></div><div class="metric-after"><span>p95</span><strong>7.85ms</strong></div></div><p class="callout"><strong>교훈</strong> 아키텍처 선택과 데이터 접근 경로는 따로 검증해야 한다.</p><p class="source">experiments/04-hybrid.md · experiments/06-strategy-read-comparison.md</p>
+      </div><aside class="notes">Hybrid 자체가 느린 것이 아니라 구현된 SQL이 느렸다. 사용자별로 follower count를 반복 계산하는 대신 celebrity author를 먼저 집계하자 동일 부하에서 Push와 가까운 p95로 내려갔다.</aside>
+    </section>
+
+    <section class="slide" id="slide-16" data-slide="16" aria-labelledby="title-16">
+      <div class="slide-inner"><div class="slide-meta"><span>정확성</span><span>15</span></div><h2 id="title-16">캐시에 있어도 지금 볼 수 있는지는 다시 확인한다</h2>
+        <div class="correctness-layout"><div class="stale-story"><p><span>t₁</span><strong>A의 글이 B 피드에 Push</strong></p><p><span>t₂</span><strong>B가 A를 unfollow</strong></p><p><span>t₃</span><strong>Redis에는 참조가 잠시 남음</strong></p></div><div class="policy-gate"><span>읽기 시점 권한 검사</span><strong>현재 follows 관계인가?</strong><p>아니면 제외하고 다음 lex 구간을 계속 읽어 limit을 채운다.</p></div></div><div class="invariant-line"><strong>성능용 projection은 권한의 원본이 아니다.</strong><span>원본 관계가 최종 노출을 결정한다.</span></div><p class="source">internal/feed/push_timeline.go · docs/design.md</p>
+      </div><aside class="notes">캐시 invalidation이 즉시 끝나지 않아도 잘못된 글을 노출하면 안 된다. 그래서 읽기 경로에서 현재 관계를 다시 확인한다. 필터링 때문에 20개가 안 차면 다음 구간을 읽어 사용자 경험도 보존한다.</aside>
+    </section>
+
+    <section class="slide" id="slide-17" data-slide="17" aria-labelledby="title-17">
+      <div class="slide-inner"><div class="slide-meta"><span>장애와 복구</span><span>16</span></div><h2 id="title-17">정확히 한 번보다, 재처리해도 같은 결과를 만든다</h2>
+        <ol class="recovery-sequence"><li><span>중단</span><strong>5,122 keys</strong><small>consumer lag 1</small></li><li><span>재시작</span><strong>이벤트 재처리</strong><small>offset은 성공 뒤 commit</small></li><li><span>멱등</span><strong>ZADD 같은 member</strong><small>중복 엔트리 없음</small></li><li><span>수렴</span><strong>100,000 keys</strong><small>consumer lag 0</small></li></ol><div class="rebuild-line"><strong>Redis 전체 유실</strong><span>PostgreSQL 원본 replay</span><b>100,000 projection 복원</b></div><p class="source">experiments/05-failure-recovery.md · cmd/rebuild-feed-projections/main.go</p>
+      </div><aside class="notes">전달은 at-least-once이고 결과는 멱등 처리로 맞춘다. Redis는 원본이 아니므로 전체 유실 시 PostgreSQL 게시물을 replay해 다시 만들 수 있다. 현재 rebuild는 쓰기를 멈추는 오프라인 절차라는 한계가 있다.</aside>
+    </section>
+
+    <section class="slide" id="slide-18" data-slide="18" aria-labelledby="title-18">
+      <div class="slide-inner"><div class="slide-meta"><span>전체 구조</span><span>17</span></div><h2 id="title-18">최종 구조는 쓰기 경로와 읽기 경로를 분리한다</h2>
+        <div class="system-map" aria-label="뉴스 피드 전체 시스템 구조">
+          <div class="system-client"><strong>Web · Mobile</strong><span>POST /posts · GET /feed</span></div>
+          <div class="system-entry"><strong>Load Balancer · Web API</strong><span>인증 · rate limit · routing</span></div>
+          <div class="system-branch write-branch"><b>쓰기 경로</b><span>Post service</span><span>PostgreSQL + Outbox</span><span>Redpanda → Worker</span><span>Redis feed projection</span></div>
+          <div class="system-branch read-branch"><b>읽기 경로</b><span>Feed service</span><span>Push projection 조회</span><span>대형 작성자 posts 조회</span><span>merge · hydrate · cursor</span></div>
+          <div class="system-media"><strong>Object Storage → CDN</strong><span>이미지·동영상 바이트, DB에는 object key</span></div>
+        </div>
+        <p class="source">책의 최종 아키텍처를 프로젝트 컴포넌트와 대응 · docs/design.md</p>
+      </div><aside class="notes">쓰기 요청은 원본과 outbox까지만 동기 처리하고 fan-out은 비동기로 진행한다. 읽기는 Redis의 일반 작성자 projection과 PostgreSQL의 대형 작성자 게시물을 병합한다. 미디어는 객체 저장소와 CDN으로 분리한다.</aside>
+    </section>
+
+    <section class="slide conclusion" id="slide-19" data-slide="19" aria-labelledby="title-19">
+      <div class="slide-inner"><div class="slide-meta"><span>결론</span><span>18</span></div><h2 id="title-19">뉴스 피드 설계는 비용의 위치를 선택하는 일이다</h2>
+        <div class="decision-table"><div class="table-head"><span>전략</span><span>읽기</span><span>쓰기</span><span>적합한 조건</span></div><div><strong>Pull</strong><span>비쌈</span><span>쌈</span><span>읽기 적음 · 관계 변화 잦음</span></div><div><strong>Push</strong><span>쌈</span><span>비쌈</span><span>읽기 많음 · fan-out 제한적</span></div><div><strong>Hybrid</strong><span>중간</span><span>중간</span><span>팔로워 분포가 크게 치우침</span></div></div><div class="closing-points"><p><strong>원본과 projection을 분리한다.</strong><span>본문은 한 번, 피드에는 post_id.</span></p><p><strong>비동기화의 총비용을 측정한다.</strong><span>API latency 밖의 큐·Redis·복구까지.</span></p><p><strong>임계값은 운영 데이터로 갱신한다.</strong><span>10만은 실험값이지 정답이 아니다.</span></p></div><p class="limitation">실험 한계: Apple M4 로컬 Docker, 5초·약 50요청 단위. production SLO나 capacity sizing 근거가 아니다.</p>
+      </div><aside class="notes">마무리에서는 다섯 키워드를 회수한다. Fan-out on Read, Fan-out on Write, Hybrid, Cache, Async processing. 이 모든 선택은 읽기·쓰기·저장·복구 중 어디에 비용을 둘지 결정하는 문제다.</aside>
+    </section>
+  </main>
+  <nav class="slide-dots" aria-label="슬라이드 이동"></nav>
+  <script>
+    const slides = [...document.querySelectorAll('[data-slide]')];
+    const label = document.querySelector('#progress-label');
+    const dots = document.querySelector('.slide-dots');
+    let current = 0;
+    slides.forEach((slide, index) => { const dot = document.createElement('a'); dot.href = `#${slide.id}`; dot.setAttribute('aria-label', `${index + 1}번 슬라이드`); dots.append(dot); });
+    const show = (index) => { current = Math.max(0, Math.min(slides.length - 1, index)); slides[current].scrollIntoView({ behavior: 'smooth' }); };
+    const observer = new IntersectionObserver((entries) => { const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]; if (!visible) return; current = slides.indexOf(visible.target); label.textContent = `${current + 1} / ${slides.length}`; document.querySelectorAll('.slide-dots a').forEach((dot, index) => dot.toggleAttribute('aria-current', index === current)); }, { threshold: [0.55, 0.8] });
+    slides.forEach((slide) => observer.observe(slide));
+    addEventListener('keydown', (event) => { if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(event.key)) { event.preventDefault(); show(current + 1); } if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(event.key)) { event.preventDefault(); show(current - 1); } if (event.key === 'Home') show(0); if (event.key === 'End') show(slides.length - 1); if (event.key.toLowerCase() === 'n') document.body.classList.toggle('show-notes'); });
+  </script>
+</body>
+</html>
